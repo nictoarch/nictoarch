@@ -5,7 +5,11 @@ VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nictoarch.ServiceLink.Operator", "Nictoarch.ServiceLink.Operator\Nictoarch.ServiceLink.Operator.csproj", "{AF4313BF-A604-4F1A-B862-FF10EA01E6EA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nictoarch.Common", "Nictoarch.Common\Nictoarch.Common.csproj", "{F69BC49F-0149-4CCE-8A97-0595CC055EAC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nictoarch.Common", "Nictoarch.Common\Nictoarch.Common.csproj", "{F69BC49F-0149-4CCE-8A97-0595CC055EAC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nictoarch.Modelling.Core", "Nictoarch.Modelling.Core\Nictoarch.Modelling.Core.csproj", "{75A0C886-4303-46E6-B2AE-AFCBE15843AB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nictoarch.Modelling.K8s", "Nictoarch.Modelling.K8s\Nictoarch.Modelling.K8s.csproj", "{2DC814A8-9DAB-4F07-BC71-115535869788}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{F69BC49F-0149-4CCE-8A97-0595CC055EAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F69BC49F-0149-4CCE-8A97-0595CC055EAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F69BC49F-0149-4CCE-8A97-0595CC055EAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75A0C886-4303-46E6-B2AE-AFCBE15843AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75A0C886-4303-46E6-B2AE-AFCBE15843AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75A0C886-4303-46E6-B2AE-AFCBE15843AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75A0C886-4303-46E6-B2AE-AFCBE15843AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DC814A8-9DAB-4F07-BC71-115535869788}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DC814A8-9DAB-4F07-BC71-115535869788}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DC814A8-9DAB-4F07-BC71-115535869788}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DC814A8-9DAB-4F07-BC71-115535869788}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
