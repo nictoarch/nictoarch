@@ -93,7 +93,8 @@ namespace Nictoarch.Common
 
                 if (Debugger.IsAttached)
                 {
-                    throw e;
+                    //throw e;
+                    ExceptionDispatchInfo.Capture(e).Throw();
                 }
 
                 Environment.Exit(1);

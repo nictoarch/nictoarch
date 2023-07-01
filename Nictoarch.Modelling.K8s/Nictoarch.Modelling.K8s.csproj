@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
@@ -11,11 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="KubernetesClient" Version="10.0.1" />
+    <PackageReference Include="KubernetesClient" Version="11.0.21" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Nictoarch.Common\Nictoarch.Common.csproj" />
+    <ProjectReference Include="..\Nictoarch.Modelling.Core\Nictoarch.Modelling.Core.csproj" />
   </ItemGroup>
 
 </Project>

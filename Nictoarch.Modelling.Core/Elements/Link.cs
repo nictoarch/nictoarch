@@ -1,18 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.JavaScript;
 using System.Text;
 using System.Threading.Tasks;
+using Jsonata.Net.Native.Json;
 
 namespace Nictoarch.Modelling.Core.Elements
 {
     public sealed class Link
     {
-        public readonly Entity from;
-        public readonly Entity to;
-        public readonly string domainId;
-        public readonly string semanticId;
-        public readonly string displayText;
+        public Entity from { get; }
+        public Entity to { get; }
+        public string domainId { get; }
+        public string semanticId { get; }
+        public string displayText { get; }
 
         public Link(Entity from, Entity to, string domainId, string semanticId, string displayText)
         {
@@ -21,6 +23,22 @@ namespace Nictoarch.Modelling.Core.Elements
             this.domainId = domainId ?? throw new ArgumentNullException(nameof(domainId));
             this.semanticId = semanticId ?? throw new ArgumentNullException(nameof(semanticId));
             this.displayText = displayText ?? throw new ArgumentNullException(nameof(displayText));
+        }
+
+        public JObject ToJson()
+        {
+            JObject result = new JObject();
+            result.Add("from_id", new JValue(this.from.semanticId));
+            result.Add("to_id", new JValue(this.to.semanticId));
+            result.Add("domain_id", new JValue(this.domainId));
+            result.Add("semantic_id", new JValue(this.semanticId));
+            result.Add("display_text", new JValue(this.displayText));
+            return result;
+        }
+
+        public override string ToString()
+        {
+            return this.ToJson().ToIndentedString();
         }
     }
 }
