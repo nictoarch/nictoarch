@@ -3,17 +3,17 @@
 ### [Stefan Goessner](https://www.xml.com/pub/a/2006/05/31/converting-between-xml-and-json.html):
 ```xml
 <e> 
-	<a>text</a> 
-	text 
-	<a>text</a> 
+  <a>text</a> 
+  text 
+  <a>text</a> 
 </e>
 ```
 ```json
 {
-	"e": { 
-		"#text": "text",
-		"a": ["text", "text"] 
-	}
+  "e": { 
+    "#text": "text",
+    "a": ["text", "text"] 
+  }
 }
 ```
 
@@ -24,10 +24,10 @@
 
 ```json
 { 
-	"a": { 
-		"$" : "hello", 
-		"@type" : "world" 
-	} 
+  "a": { 
+    "$" : "hello", 
+    "@type" : "world" 
+  } 
 }
 ```
 
@@ -37,13 +37,13 @@
 ```
 ```json
 {
-	"p": {
-		"#text": "This ",
-		"b": "is",
-		"#text1": " an ",
-		"b#1": "example",
-		"#text2": "!"
-	}
+  "p": {
+    "#text": "This ",
+    "b": "is",
+    "#text1": " an ",
+    "b#1": "example",
+    "#text2": "!"
+  }
 }
 ```
 
@@ -53,20 +53,20 @@
 ```
 ```json
 {
-	"p": {
-        "_text": ["This ", " an ", "!"],
-        "b": [
-			{
-				"_attributes": {
-					"att": "val"
-				},
-				"_text": "is"
-			}, 
-			{
-				"_text": "example"
-			}
-		]
-    }
+  "p": {
+    "_text": ["This ", " an ", "!"],
+    "b": [
+      {
+        "_attributes": {
+          "att": "val"
+        },
+        "_text": "is"
+      }, 
+      {
+        "_text": "example"
+      }
+    ]
+  }
 }
 ```
 
@@ -76,18 +76,18 @@
 ```
 ```json
 {
-    "_type": "p", 
-    "_value": "This  an !",
-    "@nested": [
-        {
-            "_type": "b",
-            "att": "val",
-            "_value": "is"
-        },
-        {
-            "_type": "b",
-            "_value": "example"
-        },
-    ]
+  "_type": "p", 
+  "_value": "This  an !",
+  "@nested": [
+    {
+      "_type": "b",
+      "att": "val",
+      "_value": "is"
+    },
+    {
+      "_type": "b",
+      "_value": "example"
+    },
+  ]
 }
 ```
