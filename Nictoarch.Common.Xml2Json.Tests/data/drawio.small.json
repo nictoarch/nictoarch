@@ -1,0 +1,94 @@
+{
+  "_type": "mxfile",
+  "host": "Electron",
+  "modified": "2023-07-02T16:14:22.585Z",
+  "agent": "5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/20.6.1 Chrome/106.0.5249.199 Electron/21.3.3 Safari/537.36",
+  "etag": "CKyVz85f06a8fsLvfMd1",
+  "compressed": "false",
+  "version": "20.6.1",
+  "type": "device",
+  "_nested": [
+    {
+      "_type": "diagram",
+      "id": "j-TYAfY92KNfTfOZs9KR",
+      "name": "Page-1",
+      "_nested": [
+        {
+          "_type": "mxGraphModel",
+          "dx": "2172",
+          "dy": "2074",
+          "grid": "1",
+          "gridSize": "10",
+          "guides": "1",
+          "tooltips": "1",
+          "connect": "1",
+          "arrows": "1",
+          "fold": "1",
+          "page": "1",
+          "pageScale": "1",
+          "pageWidth": "827",
+          "pageHeight": "1169",
+          "math": "0",
+          "shadow": "0",
+          "_nested": [
+            {
+              "_type": "root",
+              "_nested": [
+                {
+                  "_type": "mxCell",
+                  "id": "0"
+                },
+                {
+                  "_type": "mxCell",
+                  "id": "1",
+                  "parent": "0"
+                },
+                {
+                  "_type": "mxCell",
+                  "id": "jeOK_gPgHglHzW6bznnw-60",
+                  "value": "",
+                  "style": "orthogonalLoop=1;jettySize=auto;html=1;rounded=0;",
+                  "parent": "1",
+                  "source": "jeOK_gPgHglHzW6bznnw-58",
+                  "target": "jeOK_gPgHglHzW6bznnw-59",
+                  "edge": "1",
+                  "_nested": [
+                    {
+                      "_type": "mxGeometry",
+                      "relative": "1",
+                      "as": "geometry"
+                    }
+                  ]
+                },
+                {
+                  "_type": "UserObject",
+                  "label": "3 levels of dependencies defined in Gemfile, www.diagrams.net-source's Github repository",
+                  "link": "https://github.com/jgraph/www.diagrams.net-source/network/dependencies",
+                  "id": "jeOK_gPgHglHzW6bznnw-143",
+                  "_nested": [
+                    {
+                      "_type": "mxCell",
+                      "style": "rounded=1;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=20;align=center;spacingTop=3;strokeColor=#36393d;glass=0;sketch=1;fillStyle=cross-hatch;fillColor=#cce5ff;",
+                      "parent": "1",
+                      "vertex": "1",
+                      "_nested": [
+                        {
+                          "_type": "mxGeometry",
+                          "x": "-480",
+                          "y": "940",
+                          "width": "1290",
+                          "height": "60",
+                          "as": "geometry"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

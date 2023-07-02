@@ -1,0 +1,35 @@
+{
+  "_type": "span",
+  "class": "vevent",
+  "_nested": [
+	{
+	  "_type": "a",
+	  "class": "url",
+	  "href": "http://www.web2con.com/",
+	  "_nested": [
+		{
+		  "_type": "span",
+		  "class": "summary",
+		  "_value": "Web 2.0 Conference"
+		},
+		{
+		  "_type": "abbr",
+		  "class": "dtstart",
+		  "title": "2005-10-05",
+		  "_value": "October 5"
+		},
+		{
+		  "_type": "abbr",
+		  "class": "dtend",
+		  "title": "2005-10-08",
+		  "_value": "7"
+		},
+		{
+		  "_type": "span",
+		  "class": "location",
+		  "_value": "Argent Hotel, San Francisco, CA"
+		}
+	  ]
+	}
+  ]
+}

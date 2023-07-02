@@ -1,0 +1,48 @@
+{
+  "_type": "ol",
+  "class": "xoxo",
+  "_nested": [
+	{
+	  "_type": "li",
+	  "_value": "Subject 1",
+	  "_nested": [
+		{
+		  "_type": "ol",
+		  "_nested": [
+			{
+			  "_type": "li",
+			  "_value": "subpoint a"
+			},
+			{
+			  "_type": "li",
+			  "_value": "subpoint b"
+			}
+		  ]
+		}
+	  ]
+	},
+	{
+	  "_type": "li",
+	  "_nested": [
+		{
+		  "_type": "span",
+		  "_value": "Subject 2"
+		},
+		{
+		  "_type": "ol",
+		  "compact": "compact",
+		  "_nested": [
+			{
+			  "_type": "li",
+			  "_value": "subpoint c"
+			},
+			{
+			  "_type": "li",
+			  "_value": "subpoint d"
+			}
+		  ]
+		}
+	  ]
+	}
+  ]
+}
