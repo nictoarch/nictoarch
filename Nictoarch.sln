@@ -11,11 +11,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nictoarch.Modelling.Core", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nictoarch.Modelling.K8s", "Nictoarch.Modelling.K8s\Nictoarch.Modelling.K8s.csproj", "{2DC814A8-9DAB-4F07-BC71-115535869788}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nictoarch.Modelling.K8s.TestApp", "Nictoarch.Modelling.K8s.TestApp\Nictoarch.Modelling.K8s.TestApp.csproj", "{7B5D50BF-FA0E-459A-9CFA-BD0146F8376D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nictoarch.Modelling.K8s.TestApp", "Nictoarch.Modelling.K8s.TestApp\Nictoarch.Modelling.K8s.TestApp.csproj", "{7B5D50BF-FA0E-459A-9CFA-BD0146F8376D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nictoarch.Common.Xml2Json", "Nictoarch.Common.Xml2Json\Nictoarch.Common.Xml2Json.csproj", "{99FA39DE-4B73-403D-B4CF-C2A8F467E705}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nictoarch.Common.Xml2Json", "Nictoarch.Common.Xml2Json\Nictoarch.Common.Xml2Json.csproj", "{99FA39DE-4B73-403D-B4CF-C2A8F467E705}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nictoarch.Common.Xml2Json.Tests", "Nictoarch.Common.Xml2Json.Tests\Nictoarch.Common.Xml2Json.Tests.csproj", "{B5D891F2-38D9-4E2F-B667-9670FBA8CDF6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nictoarch.Common.Xml2Json.Tests", "Nictoarch.Common.Xml2Json.Tests\Nictoarch.Common.Xml2Json.Tests.csproj", "{B5D891F2-38D9-4E2F-B667-9670FBA8CDF6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nictoarch.Modelling.Json", "Nictoarch.Modelling.Json\Nictoarch.Modelling.Json.csproj", "{3E11CB3E-104C-4E6E-8C53-6E16FE1E6E6D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nictoarch.Modelling.Json.TestApp", "Nictoarch.Modelling.Json.TestApp\Nictoarch.Modelling.Json.TestApp.csproj", "{82488BEC-2D82-46EC-952A-97AC939C08CF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +55,14 @@ Global
 		{B5D891F2-38D9-4E2F-B667-9670FBA8CDF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5D891F2-38D9-4E2F-B667-9670FBA8CDF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B5D891F2-38D9-4E2F-B667-9670FBA8CDF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E11CB3E-104C-4E6E-8C53-6E16FE1E6E6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E11CB3E-104C-4E6E-8C53-6E16FE1E6E6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E11CB3E-104C-4E6E-8C53-6E16FE1E6E6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E11CB3E-104C-4E6E-8C53-6E16FE1E6E6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82488BEC-2D82-46EC-952A-97AC939C08CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82488BEC-2D82-46EC-952A-97AC939C08CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82488BEC-2D82-46EC-952A-97AC939C08CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82488BEC-2D82-46EC-952A-97AC939C08CF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

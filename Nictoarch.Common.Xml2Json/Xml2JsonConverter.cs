@@ -24,6 +24,12 @@ namespace Nictoarch.Common.Xml2Json
             this.m_settings = settings ?? new Settings();
         }
 
+        public JObject Convert(string xml)
+        {
+            XDocument doc = XDocument.Parse(xml);
+            return this.Convert(doc);
+        }
+
         public JObject Convert(XDocument doc)
         {
             return this.Convert(doc.Root!)!;

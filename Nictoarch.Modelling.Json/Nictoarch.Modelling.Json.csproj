@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<LangVersion>latest</LangVersion>
+		<TargetFramework>net7.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<DebugType>embedded</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Nictoarch.Common.Xml2Json\Nictoarch.Common.Xml2Json.csproj" />
+		<ProjectReference Include="..\Nictoarch.Modelling.Core\Nictoarch.Modelling.Core.csproj" />
+	</ItemGroup>
+
+
+</Project>
