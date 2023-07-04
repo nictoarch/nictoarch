@@ -41,7 +41,7 @@ namespace Nictoarch.Modelling.K8s.TestApp
                 entity.OnDeserialized();
             }
 
-            K8sModelProvider provider = new K8sModelProvider();
+            K8sModelProviderStub provider = new K8sModelProviderStub();
 
             Model model = await provider.GetModelAsync(spec);
 

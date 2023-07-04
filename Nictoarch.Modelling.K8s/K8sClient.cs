@@ -18,7 +18,7 @@ using k8s;
 using k8s.Authentication;
 using k8s.Autorest;
 using k8s.Exceptions;
-using NLog.Targets;
+using Nictoarch.Modelling.K8s.Spec;
 
 namespace Nictoarch.Modelling.K8s
 {
@@ -31,6 +31,41 @@ namespace Nictoarch.Modelling.K8s
         private readonly Uri m_baseUri;
         private readonly string m_tlsServerName;
         private readonly ServiceClientCredentials m_clientCredentials;
+
+        internal static KubernetesClientConfiguration GetConfiguration(ProviderSpecBase.ConnectVia connectVia, double? httpClientTimeoutSeconds = null)
+        {
+            KubernetesClientConfiguration config;
+            switch (connectVia)
+            {
+            case ProviderSpecBase.ConnectVia.auto:
+                if (KubernetesClientConfiguration.IsInCluster())
+                {
+                    config = KubernetesClientConfiguration.InClusterConfig();
+                }
+                else
+                {
+                    config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+                }
+                break;
+
+            case ProviderSpecBase.ConnectVia.config_file:
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+                break;
+
+            case ProviderSpecBase.ConnectVia.cluster:
+                config = KubernetesClientConfiguration.InClusterConfig();
+                break;
+
+            default:
+                throw new Exception("Unexpected connect via " + connectVia);
+            }
+
+            if (httpClientTimeoutSeconds != null)
+            {
+                config.HttpClientTimeout = TimeSpan.FromSeconds(httpClientTimeoutSeconds.Value);
+            }
+            return config;
+        }
 
         internal K8sClient(KubernetesClientConfiguration config)
         {

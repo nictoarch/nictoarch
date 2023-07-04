@@ -1,0 +1,20 @@
+﻿name: Test model
+entities:
+  - provider: k8s
+    spec: 
+      connect_via: config_file
+      selectors: 
+        - entity_type: service
+          api_group: "v1"
+          resource_kind: service
+#  - provider: json
+#    spec:
+#      source: "~/my_schema.xml"
+#      source_transform: xml2json
+#      query: |
+#          **[_type='object' and `abc-servicename`].{
+#              'type': 'service',
+#              'domain_id': `id`,
+#              'semantic_id': `abc-servicename`,
+#              'display_name': `abc-servicename`
+#          }
