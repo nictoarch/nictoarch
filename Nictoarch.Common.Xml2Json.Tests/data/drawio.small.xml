@@ -7,11 +7,11 @@
         <mxCell id="jeOK_gPgHglHzW6bznnw-60" value="" style="orthogonalLoop=1;jettySize=auto;html=1;rounded=0;" parent="1" source="jeOK_gPgHglHzW6bznnw-58" target="jeOK_gPgHglHzW6bznnw-59" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-		<UserObject label="3 levels of dependencies defined in Gemfile, www.diagrams.net-source&#39;s Github repository" link="https://github.com/jgraph/www.diagrams.net-source/network/dependencies" id="jeOK_gPgHglHzW6bznnw-143">
+				<object label="3 levels of dependencies defined in Gemfile, www.diagrams.net-source&#39;s Github repository" link="https://github.com/jgraph/www.diagrams.net-source/network/dependencies" id="jeOK_gPgHglHzW6bznnw-143" service-name="some_service" service-group="default">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=20;align=center;spacingTop=3;strokeColor=#36393d;glass=0;sketch=1;fillStyle=cross-hatch;fillColor=#cce5ff;" parent="1" vertex="1">
             <mxGeometry x="-480" y="940" width="1290" height="60" as="geometry" />
           </mxCell>
-        </UserObject>
+        </object>
       </root>
     </mxGraphModel>
   </diagram>

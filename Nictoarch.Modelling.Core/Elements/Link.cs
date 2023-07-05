@@ -28,8 +28,8 @@ namespace Nictoarch.Modelling.Core.Elements
         public JObject ToJson()
         {
             JObject result = new JObject();
-            result.Add("from_id", new JValue(this.from.semanticId));
-            result.Add("to_id", new JValue(this.to.semanticId));
+            result.Add("from_id", new JValue(this.from.semantic_id));
+            result.Add("to_id", new JValue(this.to.semantic_id));
             result.Add("domain_id", new JValue(this.domainId));
             result.Add("semantic_id", new JValue(this.semanticId));
             result.Add("display_text", new JValue(this.displayText));

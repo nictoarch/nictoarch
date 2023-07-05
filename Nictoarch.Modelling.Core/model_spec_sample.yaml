@@ -7,14 +7,15 @@ entities:
         - entity_type: service
           api_group: "v1"
           resource_kind: service
-#  - provider: json
-#    spec:
-#      source: "~/my_schema.xml"
-#      source_transform: xml2json
-#      query: |
-#          **[_type='object' and `abc-servicename`].{
-#              'type': 'service',
-#              'domain_id': `id`,
-#              'semantic_id': `abc-servicename`,
-#              'display_name': `abc-servicename`
-#          }
+          namespace: default
+  - provider: json
+    spec:
+      source: "../../../../Nictoarch.Common.Xml2Json.Tests/data/drawio.small.xml"
+      source_transform: xml2json
+      query: |
+          **[_type='object' and `service-name`].{
+              'type': 'service',
+              'domain_id': `id`,
+              'semantic_id': `service-name` & '@' & `service-group`,
+              'display_name': `service-name` & '@' & `service-group`
+          }[]
