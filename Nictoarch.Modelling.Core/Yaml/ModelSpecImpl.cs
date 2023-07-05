@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -13,8 +14,8 @@ namespace Nictoarch.Modelling.Core.Yaml
 {
     internal sealed class ModelSpecImpl
     {
-        public string name { get; set; } = default!;
-        public List<EntitySelector> entities { get; set; } = default!;
+        [Required] public string name { get; set; } = default!;
+        [Required] public List<EntitySelector> entities { get; set; } = default!;
 
         public sealed class EntitySelector : IYamlConvertible
         {
@@ -45,14 +46,14 @@ namespace Nictoarch.Modelling.Core.Yaml
                     Scalar providerKey = parser.Consume<Scalar>();
                     if (!providerKey.IsKey || providerKey.Value != "provider")
                     {
-                        throw new Exception("Missing 'provider' key");
+                        throw new YamlException(providerKey.Start, providerKey.End, "Missing 'provider' key");
                     }
                 }
                 Scalar providerValue = parser.Consume<Scalar>();
                 string providerName = providerValue.Value;
                 if (!this.m_registry.GetEntityProvider(providerName, out m_provider))
                 {
-                    throw new Exception($"Unknown entity provider '{providerName}'. Known providers are: {string.Join(", ", this.m_registry.EntityProviderNames.OrderBy(n => n))}");
+                    throw new YamlException(providerValue.Start, providerValue.End, $"Unknown entity provider '{providerName}'. Known providers are: {string.Join(", ", this.m_registry.EntityProviderNames.OrderBy(n => n))}");
                 }
 
                 //consume "spec:" key
@@ -60,7 +61,7 @@ namespace Nictoarch.Modelling.Core.Yaml
                     Scalar specKey = parser.Consume<Scalar>();
                     if (!specKey.IsKey || specKey.Value != "spec")
                     {
-                        throw new Exception("Missing 'spec' key");
+                        throw new YamlException(specKey.Start, specKey.End, "Missing 'spec' key");
                     }
                 }
 

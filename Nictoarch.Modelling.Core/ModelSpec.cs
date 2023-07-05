@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Nictoarch.Modelling.Core.Elements;
 using Nictoarch.Modelling.Core.Yaml;
 using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NodeDeserializers;
 
 namespace Nictoarch.Modelling.Core
 {
@@ -32,6 +33,7 @@ namespace Nictoarch.Modelling.Core
         {
             IDeserializer deserializer = new DeserializerBuilder()
                 .WithObjectFactory(new ModelRegistryObjectFactory(registry))
+                .WithNodeDeserializer(inner => new ValidatingDeserializer(inner), s => s.InsteadOf<ObjectNodeDeserializer>())
                 .Build();
 
             ModelSpecImpl spec = deserializer.Deserialize<ModelSpecImpl>(reader);

@@ -24,7 +24,7 @@ namespace Nictoarch.Modelling.App
             ModelSpec modelSpec = ModelSpec.LoadFromFile("../../../../Nictoarch.Modelling.Core/model_spec_sample.yaml", registry);
             Model model = await modelSpec.GetModelAsync();
 
-            Console.WriteLine(model.ToJson());
+            Console.WriteLine(model.ToJson().ToIndentedString());
         }
     }
 }

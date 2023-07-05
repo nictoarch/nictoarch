@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -9,6 +10,6 @@ namespace Nictoarch.Modelling.K8s.Spec
 {
     public sealed class EntitySelector : SelectorBase
     {
-        [JsonRequired] public string entity_type { get; set; } = default!;
+        [Required] public string entity_type { get; set; } = default!;
     }
 }
