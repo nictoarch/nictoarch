@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Security;
+using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -32,12 +33,12 @@ namespace Nictoarch.Modelling.K8s
         private readonly string m_tlsServerName;
         private readonly ServiceClientCredentials m_clientCredentials;
 
-        internal static KubernetesClientConfiguration GetConfiguration(ProviderSpecBase.ConnectVia connectVia, double? httpClientTimeoutSeconds = null)
+        internal static KubernetesClientConfiguration GetConfiguration(ProviderSpecBase.ConnectViaType connectVia, string? configFile, double? httpClientTimeoutSeconds = null)
         {
             KubernetesClientConfiguration config;
             switch (connectVia)
             {
-            case ProviderSpecBase.ConnectVia.auto:
+            case ProviderSpecBase.ConnectViaType.auto:
                 if (KubernetesClientConfiguration.IsInCluster())
                 {
                     config = KubernetesClientConfiguration.InClusterConfig();
@@ -48,11 +49,18 @@ namespace Nictoarch.Modelling.K8s
                 }
                 break;
 
-            case ProviderSpecBase.ConnectVia.config_file:
-                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            case ProviderSpecBase.ConnectViaType.config_file:
+                if (configFile != null)
+                {
+                    config = KubernetesClientConfiguration.BuildConfigFromConfigFile(configFile);
+                }
+                else
+                {
+                    config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+                }
                 break;
 
-            case ProviderSpecBase.ConnectVia.cluster:
+            case ProviderSpecBase.ConnectViaType.cluster:
                 config = KubernetesClientConfiguration.InClusterConfig();
                 break;
 
@@ -256,7 +264,6 @@ namespace Nictoarch.Modelling.K8s
             cancellationToken.ThrowIfCancellationRequested();
             using (HttpResponseMessage httpResponse = await this.m_httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
             {
-                
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (!httpResponse.IsSuccessStatusCode)
@@ -281,12 +288,19 @@ namespace Nictoarch.Modelling.K8s
                     throw new HttpException($"Error executing request: {(int)httpResponse.StatusCode} {httpResponse.StatusCode}: {responseContent}", httpResponse.StatusCode);
                 }
 
+                //TODO: see https://github.com/mikhail-barg/jsonata.net.native/issues/12
+                //      see https://github.com/dotnet/runtime/issues/68983
+                /*
                 using (Stream stream = await httpResponse.Content.ReadAsStreamAsync(cancellationToken))
                 using (TextReader reader = new StreamReader(stream))
                 {
                     JToken result = JToken.Parse(reader);
                     return result;
                 }
+                */
+                string responseStr = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
+                JToken result = JToken.Parse(responseStr);
+                return result;
             }
         }
 

@@ -16,6 +16,8 @@ namespace Nictoarch.Modelling.Core
     {
         private ModelSpecImpl m_spec;
 
+        public string Name => this.m_spec.name;
+
         private ModelSpec(ModelSpecImpl spec)
         {
             this.m_spec = spec;

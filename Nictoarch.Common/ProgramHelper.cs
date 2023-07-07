@@ -72,6 +72,28 @@ namespace Nictoarch.Common
             }
         }
 
+        public static async Task<int> MainWrapperAsync(Func<Task<int>> mainAction)
+        {
+            SetupHandlers();
+
+            if (!Debugger.IsAttached)
+            {
+                try
+                {
+                    return await mainAction.Invoke();
+                }
+                catch (Exception e)
+                {
+                    HandleFatalException(e, ExceptionSource.MainAction_Exception);
+                    throw;
+                }
+            }
+            else
+            {
+                return await mainAction.Invoke();
+            }
+        }
+
         public static void HandleFatalException(Exception e, ExceptionSource source)
         {
             s_logger.Trace(e, $"Processing {nameof(HandleFatalException)} for {e.GetType().Name} (from {source})");

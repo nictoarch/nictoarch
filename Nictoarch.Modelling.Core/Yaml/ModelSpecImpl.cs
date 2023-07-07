@@ -17,7 +17,7 @@ namespace Nictoarch.Modelling.Core.Yaml
         [Required] public string name { get; set; } = default!;
         [Required] public List<EntitySelector> entities { get; set; } = default!;
 
-        public sealed class EntitySelector : IYamlConvertible
+        public sealed class EntitySelector: IYamlConvertible
         {
             private readonly ModelProviderRegistry m_registry;
             private ModelProviderRegistry.EntityProvider? m_provider;
