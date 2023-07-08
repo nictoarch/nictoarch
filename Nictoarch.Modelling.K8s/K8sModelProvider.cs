@@ -63,9 +63,9 @@ namespace Nictoarch.Modelling.K8s
 
             Entity entity = new Entity(
                 type: entitySelector.entity_type,
-                domainId: domainId,
-                semanticId: semanticId,
-                displayName: displayName
+                domain_id: domainId,
+                semantic_id: semanticId,
+                display_name: displayName
             );
 
             return entity;
