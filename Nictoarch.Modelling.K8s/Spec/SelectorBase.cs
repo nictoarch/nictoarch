@@ -19,13 +19,16 @@ namespace Nictoarch.Modelling.K8s.Spec
         public string? @namespace { get; set; } //null or namespace name
         public string? label_query { get; set; } //null or valid label selector, see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
 
-        public string domain_id_expr { get; set; } = "metadata.uid";
-        public string semantic_id_expr { get; set; } = "metadata.name & '@' & metadata.namespace";
-        public string display_name_expr { get; set; } = "metadata.name & '@' & metadata.namespace";
+        public string? filter_expr { get; set; } = null;
+
+        [Required] public string domain_id_expr { get; set; } = "metadata.uid";
+        [Required] public string semantic_id_expr { get; set; } = "metadata.name & '@' & metadata.namespace";
+        [Required] public string display_name_expr { get; set; } = "metadata.name & '@' & metadata.namespace";
 
         internal JsonataQuery domainIdQuery = default!;
         internal JsonataQuery semanticIdQuery = default!;
         internal JsonataQuery displayNameQuery = default!;
+        internal JsonataQuery? filterQuery = null;
 
         void IYamlOnDeserialized.OnDeserialized(ParsingEvent parsingEvent)
         {
@@ -37,6 +40,18 @@ namespace Nictoarch.Modelling.K8s.Spec
             if (this.label_query == "")
             {
                 throw new YamlException(parsingEvent.Start, parsingEvent.End, $"Bad value of '{nameof(this.label_query)}': either specify a valid K8s label algebra selector, or use 'null'");
+            }
+
+            try
+            {
+                if (this.filter_expr != null)
+                {
+                    this.filterQuery = new JsonataQuery(this.filter_expr);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new YamlException(parsingEvent.Start, parsingEvent.End, $"Failed to parse '{nameof(this.filter_expr)}': {ex.Message}", ex);
             }
 
             try

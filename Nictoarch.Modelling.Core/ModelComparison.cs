@@ -11,6 +11,8 @@ namespace Nictoarch.Modelling.Core
     {
         public string ref_model_name { get; }
         public string check_model_name { get; }
+        public int entities_not_in_check_count => entities_not_in_check.Count;
+        public int entities_not_in_ref_count => entities_not_in_ref.Count;
         public IReadOnlyList<Entity> entities_not_in_check { get; }
         public IReadOnlyList<Entity> entities_not_in_ref { get; }
 

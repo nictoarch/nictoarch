@@ -44,15 +44,48 @@ namespace Nictoarch.Modelling.K8s
             }
         }
 
-        private static Task<IReadOnlyList<JToken>> GetResources(K8sClient client, SelectorBase selector, CancellationToken cancellationToken)
+        private static async Task<IReadOnlyList<JToken>> GetResources(K8sClient client, SelectorBase selector, CancellationToken cancellationToken)
         {
-            return client.GetResources(
+            IReadOnlyList<JToken> resources = await client.GetResources(
                 apiGroup: selector.api_group,
                 resourceKind: selector.resource_kind.ToLowerInvariant(),
                 @namespace: selector.@namespace,
                 labelSelector: selector.label_query,
                 cancellationToken: cancellationToken
             );
+
+            if (selector.filterQuery != null)
+            {
+                List<JToken> filtered = new List<JToken>(resources.Count);
+
+                foreach (JToken resource in resources)
+                {
+                    try
+                    {
+                        JToken filterResult = selector.filterQuery.Eval(resource);
+                        if (filterResult.Type == JTokenType.Null
+                            || filterResult.Type == JTokenType.Undefined
+                            || (filterResult.Type == JTokenType.Boolean && ((bool)filterResult == false))
+                        )
+                        {
+                            continue; //filter failed
+                        }
+                        else
+                        {
+                            filtered.Add(resource);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"Failed to execute filter on resource: {ex.Message}. Filter: '{selector.filter_expr}', resource: '{resource.ToFlatString()}'");
+                    }
+                }
+                return filtered;
+            }
+            else
+            {
+                return resources;
+            }
         }
 
         private static Entity K8sToEntity(JToken resource, EntitySelector entitySelector)
