@@ -6,13 +6,13 @@ using System.Text;
 using System.Threading.Tasks;
 using k8s;
 using Nictoarch.Modelling.Core.Yaml;
-using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
+using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 
 namespace Nictoarch.Modelling.K8s.Spec
 {
-    public abstract class ProviderSpecBase: IYamlOnDeserialized
+    public sealed class ProviderConfig : IYamlOnDeserialized
     {
         /**
 
@@ -40,7 +40,7 @@ namespace Nictoarch.Modelling.K8s.Spec
             }
         }
 
-        internal KubernetesClientConfiguration GetConfiguration()
+        internal KubernetesClientConfiguration GetK8sConfiguration()
         {
             return K8sClient.GetConfiguration(this.connect_via!.type, this.connect_via!.config_file, this.connect_timeout_seconds);
         }
@@ -64,7 +64,7 @@ namespace Nictoarch.Modelling.K8s.Spec
                     string strValue = value.Value;
                     if (!Enum.TryParse(strValue, out ConnectViaType parsedType))
                     {
-                        throw new YamlException(value.Start, value.End, $"Unexpected {nameof(ProviderSpecBase.connect_via)} value: '{strValue}'. Specify either one of {String.Join(", ", Enum.GetValues<ConnectViaType>())}, or map with details");
+                        throw new YamlException(value.Start, value.End, $"Unexpected {nameof(ProviderConfig.connect_via)} value: '{strValue}'. Specify either one of {String.Join(", ", Enum.GetValues<ConnectViaType>())}, or map with details");
                     }
                     this.type = parsedType;
                 }
@@ -86,7 +86,5 @@ namespace Nictoarch.Modelling.K8s.Spec
                 [Required] public string config_file { get; set; } = default!;
             }
         }
-
-
     }
 }

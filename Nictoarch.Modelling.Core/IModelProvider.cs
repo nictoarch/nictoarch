@@ -9,14 +9,28 @@ using Nictoarch.Modelling.Core.Elements;
 
 namespace Nictoarch.Modelling.Core
 {
-    public interface IProviderBase
+    public interface IModelProviderFactory
     {
         string Name { get; }
     }
 
-    public interface IEntityProvider<TEntitySpec>: IProviderBase
+    public interface IModelProviderFactory<TConfig, TEntitySpec, TValidationSpec> : IModelProviderFactory
+        where TConfig : class
         where TEntitySpec : class
+        where TValidationSpec : class
+    {
+        Task<IModelProvider> GetProviderAsync(TConfig config, CancellationToken cancellationToken);
+    }
+
+    public interface IModelProvider: IDisposable
+    {
+    }
+
+    public interface IModelProvider<TEntitySpec, TValidationSpec>: IModelProvider
+        where TEntitySpec : class
+        where TValidationSpec : class
     {
         Task<List<Entity>> GetEntitiesAsync(TEntitySpec spec, CancellationToken cancellationToken);
+        Task<List<object>> GetInvalidObjectsAsync(TValidationSpec spec, CancellationToken cancellationToken);
     }
 }

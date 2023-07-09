@@ -15,9 +15,9 @@ namespace Nictoarch.Modelling.Core
     public sealed class ModelProviderRegistry
     {
         private readonly Logger m_logger = LogManager.GetCurrentClassLogger();
-        private readonly Dictionary<string, EntityProvider> m_entityProviders = new Dictionary<string, EntityProvider>();
+        private readonly Dictionary<string, ModelProviderFactory> m_providerFactories = new Dictionary<string, ModelProviderFactory>();
 
-        public IEnumerable<string> EntityProviderNames => this.m_entityProviders.Keys;
+        public IEnumerable<string> ProviderNames => this.m_providerFactories.Keys;
 
         public ModelProviderRegistry()
         {
@@ -51,55 +51,92 @@ namespace Nictoarch.Modelling.Core
             AssemblyName assemblyName = new AssemblyName(pluginAssembly.FullName!);
             this.m_logger.Trace($"Loading providers from {assemblyName.Name} v{assemblyName.Version}");
 
-            Type openEntityProviderType = typeof(IEntityProvider<>);
+            Type openFactoryType = typeof(IModelProviderFactory<,,>);
 
-            foreach (Type classType in pluginAssembly.GetExportedTypes().Where(t => t.IsClass && !t.IsAbstract))
+            foreach (Type factoryClassType in pluginAssembly.GetExportedTypes().Where(t => t.IsClass && !t.IsAbstract))
             {
-                foreach (Type interfaceType in classType.GetInterfaces().Where(it => it.IsGenericType))
+                foreach (Type interfaceType in factoryClassType.GetInterfaces().Where(it => it.IsGenericType))
                 {
-                    if (openEntityProviderType.IsAssignableFrom(interfaceType.GetGenericTypeDefinition()))
+                    if (openFactoryType.IsAssignableFrom(interfaceType.GetGenericTypeDefinition()))
                     {
-                        Type specType = interfaceType.GetGenericArguments()[0];
-                        EntityProvider provider = new EntityProvider(classType, specType);
-                        this.m_entityProviders.Add(provider.Name, provider);
-                        this.m_logger.Trace($"Added entity provider '{provider.Name}' from {classType.Name}");
+                        Type[] args = interfaceType.GetGenericArguments();
+                        Type configType = args[0];
+                        Type entityConfigType = args[1];
+                        Type validationConfigType = args[2];
+                        ModelProviderFactory factory = new ModelProviderFactory(factoryClassType, configType, entityConfigType, validationConfigType);
+                        this.m_providerFactories.Add(factory.Name, factory);
+                        this.m_logger.Trace($"Added provider '{factory.Name}' from {factoryClassType.Name}");
                     }
                 }
             }
         }
 
-        internal bool GetEntityProvider(string name, [NotNullWhen(true)] out EntityProvider? provider)
+        internal bool GetProviderFactory(string name, [NotNullWhen(true)] out ModelProviderFactory? factory)
         {
-            return this.m_entityProviders.TryGetValue(name, out provider);
+            return this.m_providerFactories.TryGetValue(name, out factory);
         }
 
-        internal sealed class EntityProvider
+        internal sealed class ModelProviderFactory
         {
-            private readonly IProviderBase m_providerInstance;
-            private readonly MethodInfo m_getEntitiesMethod;
+            private readonly IModelProviderFactory m_factoryInstance;
+            private readonly MethodInfo m_getProviderMethod;
+            private readonly MethodInfo m_getEntitesMethod;
+            private readonly MethodInfo m_getInvalidObjectsMethod;
 
-            internal string Name => this.m_providerInstance.Name;
-            internal Type SpecType { get; }
-            
+            internal string Name => this.m_factoryInstance.Name;
+            internal Type ConfigType { get; }
+            internal Type EntityConfigType { get; }
+            internal Type ValidationConfigType { get; }
 
-            internal EntityProvider(Type providerType, Type specType)
+            internal ModelProviderFactory(Type providerType, Type configType, Type entityConfigType, Type validationConfigType)
             {
-                this.SpecType = specType;
-                this.m_providerInstance = (IProviderBase)Activator.CreateInstance(providerType)!;
-                this.m_getEntitiesMethod = typeof(IEntityProvider<>)
-                    .MakeGenericType(this.SpecType)
-                    .GetMethod(nameof(IEntityProvider<object>.GetEntitiesAsync))!;
+                this.ConfigType = configType;
+                this.EntityConfigType = entityConfigType;
+                this.ValidationConfigType = validationConfigType;
+
+                this.m_factoryInstance = (IModelProviderFactory)Activator.CreateInstance(providerType)!;
+
+                this.m_getProviderMethod = typeof(IModelProviderFactory<,,>)
+                    .MakeGenericType(this.ConfigType, this.EntityConfigType, this.ValidationConfigType)
+                    .GetMethod(nameof(IModelProviderFactory<object, object, object>.GetProviderAsync))!;
+                this.m_getEntitesMethod = typeof(IModelProvider<,>)
+                    .MakeGenericType(this.EntityConfigType, this.ValidationConfigType)
+                    .GetMethod(nameof(IModelProvider<object, object>.GetEntitiesAsync))!;
+                this.m_getInvalidObjectsMethod = typeof(IModelProvider<,>)
+                    .MakeGenericType(this.EntityConfigType, this.ValidationConfigType)
+                    .GetMethod(nameof(IModelProvider<object, object>.GetInvalidObjectsAsync))!;
             }
 
-            internal Task<List<Entity>> GetEntitiesAsync(object spec, CancellationToken cancellationToken)
+            internal Task<IModelProvider> GetProviderAsync(object config, CancellationToken cancellationToken)
             {
-                if (!this.SpecType.IsAssignableFrom(spec.GetType())) 
+                if (!this.ConfigType.IsAssignableFrom(config.GetType())) 
                 { 
-                    throw new Exception($"Bad spec type ({spec.GetType()}) specified for Entity provider {this.Name}, expected {this.SpecType}");
+                    throw new Exception($"Bad config type ({config.GetType()}) specified for Model provider {this.Name}, expected {this.ConfigType}");
                 }
 
-                return (Task<List<Entity>>)this.m_getEntitiesMethod.Invoke(this.m_providerInstance, new object[] { spec, cancellationToken })!;
+                return (Task<IModelProvider>)this.m_getProviderMethod.Invoke(this.m_factoryInstance, new object[] { config, cancellationToken })!;
+            }
+
+            internal Task<List<Entity>> GetEntitiesAsync(IModelProvider provider, object config, CancellationToken cancellationToken)
+            {
+                if (!this.EntityConfigType.IsAssignableFrom(config.GetType()))
+                {
+                    throw new Exception($"Bad Entity config type ({config.GetType()}) specified for Model provider {this.Name}, expected {this.EntityConfigType}");
+                }
+
+                return (Task<List<Entity>>)this.m_getEntitesMethod.Invoke(provider, new object[] { config, cancellationToken })!;
+            }
+
+            internal Task<List<object>> GetInvalidObjactsAsync(IModelProvider provider, object config, CancellationToken cancellationToken)
+            {
+                if (!this.ValidationConfigType.IsAssignableFrom(config.GetType()))
+                {
+                    throw new Exception($"Bad Validation config type ({config.GetType()}) specified for Model provider {this.Name}, expected {this.ValidationConfigType}");
+                }
+
+                return (Task<List<object>>)this.m_getInvalidObjectsMethod.Invoke(provider, new object[] { config, cancellationToken })!;
             }
         }
     }
 }
+

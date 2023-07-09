@@ -22,9 +22,9 @@ namespace Nictoarch.Modelling.Core.Yaml
 
         object IObjectFactory.Create(Type type)
         {
-            if (type == typeof(ModelSpecImpl.EntitySelector))
+            if (type == typeof(ModelSpecImpl.ModelProviderSpec))
             {
-                return new ModelSpecImpl.EntitySelector(m_registry);
+                return new ModelSpecImpl.ModelProviderSpec(m_registry);
             }
             else
             {

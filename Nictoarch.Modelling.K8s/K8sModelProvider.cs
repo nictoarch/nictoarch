@@ -13,40 +13,48 @@ using Nictoarch.Modelling.K8s.Spec;
 
 namespace Nictoarch.Modelling.K8s
 {
-    public sealed class K8sModelProvider : IEntityProvider<EntityProviderSpec>
+    public sealed class K8sModelProvider : IModelProvider<EntitySelector, SelectorBase>
     {
-        string IProviderBase.Name => "k8s";
+        private readonly K8sClient m_client;
 
-        async Task<List<Entity>> IEntityProvider<EntityProviderSpec>.GetEntitiesAsync(EntityProviderSpec spec, CancellationToken cancellationToken)
+        internal K8sModelProvider(K8sClient client)
         {
-            KubernetesClientConfiguration config = spec.GetConfiguration();
-            List<Entity> results = new List<Entity>();
-            using (K8sClient client = new K8sClient(config))
+            this.m_client = client;
+        }
+
+        void IDisposable.Dispose()
+        {
+            this.m_client.Dispose();
+        }
+
+        async Task<List<Entity>> IModelProvider<EntitySelector, SelectorBase>.GetEntitiesAsync(EntitySelector entitySelector, CancellationToken cancellationToken)
+        {
+            IReadOnlyList<JToken> resources = await this.GetResources(entitySelector, cancellationToken);
+            List<Entity> results = new List<Entity>(resources.Count);
+            foreach (JToken resource in resources)
             {
-                foreach (EntitySelector selector in spec.selectors)
-                {
-                    await GetEntities(client, selector, results, cancellationToken);
-                    cancellationToken.ThrowIfCancellationRequested();
-                }
+                Entity entity = this.K8sToEntity(resource, entitySelector);
+                results.Add(entity);
+                cancellationToken.ThrowIfCancellationRequested();
             }
             return results;
         }
 
-
-        private static async Task GetEntities(K8sClient client, EntitySelector entitySelector, List<Entity> results, CancellationToken cancellationToken)
+        async Task<List<object>> IModelProvider<EntitySelector, SelectorBase>.GetInvalidObjectsAsync(SelectorBase objectSelector, CancellationToken cancellationToken)
         {
-            IReadOnlyList<JToken> resources = await GetResources(client, entitySelector, cancellationToken);
+            IReadOnlyList<JToken> resources = await this.GetResources(objectSelector, cancellationToken);
+            List<object> results = new List<object>(resources.Count);
             foreach (JToken resource in resources)
             {
-                Entity entity = K8sToEntity(resource, entitySelector);
-                results.Add(entity);
+                results.Add(resource);
                 cancellationToken.ThrowIfCancellationRequested();
             }
+            return results;
         }
 
-        private static async Task<IReadOnlyList<JToken>> GetResources(K8sClient client, SelectorBase selector, CancellationToken cancellationToken)
+        private async Task<IReadOnlyList<JToken>> GetResources(SelectorBase selector, CancellationToken cancellationToken)
         {
-            IReadOnlyList<JToken> resources = await client.GetResources(
+            IReadOnlyList<JToken> resources = await this.m_client.GetResources(
                 apiGroup: selector.api_group,
                 resourceKind: selector.resource_kind.ToLowerInvariant(),
                 @namespace: selector.@namespace,
@@ -88,11 +96,11 @@ namespace Nictoarch.Modelling.K8s
             }
         }
 
-        private static Entity K8sToEntity(JToken resource, EntitySelector entitySelector)
+        private Entity K8sToEntity(JToken resource, EntitySelector entitySelector)
         {
-            string domainId = EvaluateValueExpression(resource, entitySelector.domainIdQuery, nameof(entitySelector.domain_id_expr), entitySelector.domain_id_expr);
-            string semanticId = EvaluateValueExpression(resource, entitySelector.semanticIdQuery, nameof(entitySelector.semantic_id_expr), entitySelector.semantic_id_expr);
-            string displayName = EvaluateValueExpression(resource, entitySelector.displayNameQuery, nameof(entitySelector.display_name_expr), entitySelector.display_name_expr);
+            string domainId = this.EvaluateValueExpression(resource, entitySelector.domainIdQuery, nameof(entitySelector.domain_id_expr), entitySelector.domain_id_expr);
+            string semanticId = this.EvaluateValueExpression(resource, entitySelector.semanticIdQuery, nameof(entitySelector.semantic_id_expr), entitySelector.semantic_id_expr);
+            string displayName = this.EvaluateValueExpression(resource, entitySelector.displayNameQuery, nameof(entitySelector.display_name_expr), entitySelector.display_name_expr);
 
             Entity entity = new Entity(
                 type: entitySelector.entity_type,
@@ -104,7 +112,7 @@ namespace Nictoarch.Modelling.K8s
             return entity;
         }
 
-        private static string EvaluateValueExpression(JToken objectTree, JsonataQuery query, string expressionName, string expressionValue)
+        private string EvaluateValueExpression(JToken objectTree, JsonataQuery query, string expressionName, string expressionValue)
         {
             JToken result;
             try

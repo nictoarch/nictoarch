@@ -11,7 +11,7 @@ using YamlDotNet.Core.Events;
 
 namespace Nictoarch.Modelling.Json
 {
-    public sealed class EntityProviderSpec : IYamlOnDeserialized
+    public sealed class ProviderConfig
     {
         public enum ESourceTransform
         {
@@ -21,20 +21,5 @@ namespace Nictoarch.Modelling.Json
 
         [Required] public string source { get; set; } = default!;
         [Required] public ESourceTransform source_transform { get; set; } = ESourceTransform.none;
-        [Required] public string query { get; set; } = default!;
-
-        internal JsonataQuery entityQuery = default!;
-
-        void IYamlOnDeserialized.OnDeserialized(ParsingEvent parsingEvent)
-        {
-            try
-            {
-                entityQuery = new JsonataQuery(query);
-            }
-            catch (Exception ex)
-            {
-                throw new YamlException(parsingEvent.Start, parsingEvent.End, $"Failed to parse '{nameof(query)}': {ex.Message}", ex);
-            }
-        }
     }
 }

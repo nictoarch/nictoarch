@@ -43,22 +43,19 @@ namespace Nictoarch.Modelling.Core
             return new ModelSpec(spec);
         }
 
-        private async Task<List<Entity>> GetEntitiesAsync(CancellationToken cancellationToken)
-        {
-            List<Entity> result = new List<Entity>();
-            foreach (ModelSpecImpl.EntitySelector entitySelector in this.m_spec.entities)
-            {
-                List<Entity> chunk = await entitySelector.GetEntitiesAsync(cancellationToken);
-                result.AddRange(chunk);
-                cancellationToken.ThrowIfCancellationRequested();
-            }
-            return result;
-        }
-
         public async Task<Model> GetModelAsync(CancellationToken cancellationToken = default)
         {
-            List<Entity> entities = await this.GetEntitiesAsync(cancellationToken);
-            return new Model(this.m_spec.name, entities, new List<Link>());
+            List<Entity> entities = new List<Entity>();
+            List<Link> links = new List<Link>();
+            List<object> invalidObjects = new List<object>();
+
+            foreach (ModelSpecImpl.ModelProviderSpec providerSpec in this.m_spec.providers)
+            {
+                await providerSpec.ProcessAsync(entities, links, invalidObjects, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+
+            return new Model(this.m_spec.name, entities, links, invalidObjects);
         }
     }
 }

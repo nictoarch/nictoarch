@@ -1,21 +1,31 @@
 ﻿name: Test model
-entities:
+providers:
   - provider: k8s
-    spec: 
+    config: 
       connect_via: config_file
-      selectors: 
-        - entity_type: service
-          api_group: "v1"
-          resource_kind: service
-          namespace: default
+    entities:
+      - entity_type: service
+        api_group: "v1"
+        resource_kind: service
+        namespace: default
   - provider: json
-    spec:
+    config:
       source: "../../../../Nictoarch.Common.Xml2Json.Tests/data/drawio.small.xml"
       source_transform: xml2json
-      query: |
-          **[_type='object' and `service-name`].{
+    entities: 
+      - query: |
+         **[_type='object' and `service-name`].{
               'type': 'service',
               'domain_id': `id`,
               'semantic_id': `service-name` & '@' & `service-group`,
               'display_name': `service-name` & '@' & `service-group`
           }[]
+    invalid:
+      - query: |
+          **[_type='root']
+              ._nested[
+                 _type='mxCell'
+                 and id != '0'
+                 and id != '1'
+                 and edge != '1'
+          ]

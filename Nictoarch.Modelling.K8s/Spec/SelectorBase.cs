@@ -12,7 +12,7 @@ using YamlDotNet.Core.Events;
 
 namespace Nictoarch.Modelling.K8s.Spec
 {
-    public abstract class SelectorBase: IYamlOnDeserialized
+    public class SelectorBase: IYamlOnDeserialized
     {
         [Required] public string api_group { get; set; } = default!; //eg "apps" or "apps/v1". use "v1" or "core" for core resources
         [Required] public string resource_kind { get; set; } = default!; //eg "deployment" or "deployments"

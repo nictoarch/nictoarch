@@ -33,12 +33,12 @@ namespace Nictoarch.Modelling.K8s
         private readonly string m_tlsServerName;
         private readonly ServiceClientCredentials m_clientCredentials;
 
-        internal static KubernetesClientConfiguration GetConfiguration(ProviderSpecBase.ConnectViaType connectVia, string? configFile, double? httpClientTimeoutSeconds = null)
+        internal static KubernetesClientConfiguration GetConfiguration(ProviderConfig.ConnectViaType connectVia, string? configFile, double? httpClientTimeoutSeconds = null)
         {
             KubernetesClientConfiguration config;
             switch (connectVia)
             {
-            case ProviderSpecBase.ConnectViaType.auto:
+            case ProviderConfig.ConnectViaType.auto:
                 if (KubernetesClientConfiguration.IsInCluster())
                 {
                     config = KubernetesClientConfiguration.InClusterConfig();
@@ -49,7 +49,7 @@ namespace Nictoarch.Modelling.K8s
                 }
                 break;
 
-            case ProviderSpecBase.ConnectViaType.config_file:
+            case ProviderConfig.ConnectViaType.config_file:
                 if (configFile != null)
                 {
                     config = KubernetesClientConfiguration.BuildConfigFromConfigFile(configFile);
@@ -60,7 +60,7 @@ namespace Nictoarch.Modelling.K8s
                 }
                 break;
 
-            case ProviderSpecBase.ConnectViaType.cluster:
+            case ProviderConfig.ConnectViaType.cluster:
                 config = KubernetesClientConfiguration.InClusterConfig();
                 break;
 

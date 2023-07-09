@@ -15,12 +15,14 @@ namespace Nictoarch.Modelling.Core.Elements
 
         public IReadOnlyList<Entity> entities { get; }
         public IReadOnlyList<Link> links { get; }
+        public IReadOnlyList<object> invalid_objects { get; }
 
-        public Model(string name, IReadOnlyList<Entity> entities, IReadOnlyList<Link> links)
+        public Model(string name, IReadOnlyList<Entity> entities, IReadOnlyList<Link> links, IReadOnlyList<object> invalid_objects)
         {
             this.name = name ?? throw new ArgumentNullException(nameof(name));
             this.entities = entities ?? throw new ArgumentNullException(nameof(entities));
             this.links = links ?? throw new ArgumentNullException(nameof(links));
+            this.invalid_objects = invalid_objects ?? throw new ArgumentNullException(nameof(invalid_objects));
 
             try
             {
@@ -69,7 +71,6 @@ namespace Nictoarch.Modelling.Core.Elements
             {
                 entitiesArray.Add(entity.ToJson());
             }
-
             result.Add(nameof(this.entities), entitiesArray);
 
             JArray linksArray = new JArray(this.links.Count);
@@ -77,8 +78,23 @@ namespace Nictoarch.Modelling.Core.Elements
             {
                 linksArray.Add(link.ToJson());
             }
-
             result.Add(nameof(this.links), linksArray);
+
+
+            JArray invalidsArray = new JArray(this.invalid_objects.Count);
+            foreach (object invalid in this.invalid_objects)
+            {
+                if (invalid is JToken token)
+                {
+                    invalidsArray.Add(token);
+                }
+                else
+                {
+                    invalidsArray.Add(JToken.FromObject(invalid));
+                }
+            }
+            result.Add(nameof(this.invalid_objects), invalidsArray);
+
 
             return result;
         }

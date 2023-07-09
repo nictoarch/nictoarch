@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -14,26 +15,26 @@ using Nictoarch.Modelling.Json;
 
 namespace Nictoarch.Modelling.Drawio
 {
-    public sealed class JsonModelProvider : IEntityProvider<EntityProviderSpec>
+    public sealed class JsonModelProvider : IModelProvider<QuerySelector, QuerySelector>
     {
-        string IProviderBase.Name => "json";
+        private readonly JToken m_json;
 
-        async Task<List<Entity>> IEntityProvider<EntityProviderSpec>.GetEntitiesAsync(EntityProviderSpec spec, CancellationToken cancellationToken)
+        internal JsonModelProvider(JToken json)
         {
-            JToken json;
-            try
-            {
-                json = await ReadJson(spec.source, spec.source_transform, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to read source json: {ex.Message}", ex);
-            }
+            this.m_json = json;
+        }
 
+        void IDisposable.Dispose()
+        {
+            //nothing to od
+        }
+
+        Task<List<Entity>> IModelProvider<QuerySelector, QuerySelector>.GetEntitiesAsync(QuerySelector spec, CancellationToken cancellationToken)
+        {
             JToken resultToken;
             try
             {
-                resultToken = spec.entityQuery.Eval(json);
+                resultToken = spec.entityQuery.Eval(this.m_json);
             }
             catch (Exception ex)
             {
@@ -55,57 +56,47 @@ namespace Nictoarch.Modelling.Drawio
                 cancellationToken.ThrowIfCancellationRequested();
             }
 
-            return entities;
+            return Task.FromResult(entities);
         }
 
-        private static async Task<JToken> ReadJson(string source, EntityProviderSpec.ESourceTransform sourceTransform, CancellationToken cancellationToken)
+        Task<List<object>> IModelProvider<QuerySelector, QuerySelector>.GetInvalidObjectsAsync(QuerySelector spec, CancellationToken cancellationToken)
         {
-            if (source.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || source.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            JToken resultToken;
+            try
             {
-                using (HttpClient httpClient = new HttpClient()) 
+                resultToken = spec.entityQuery.Eval(this.m_json);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to execure JSONata query: {ex.Message}", ex);
+            }
+
+            List<object> results = new List<object>();
+
+            switch (resultToken.Type)
+            {
+            case JTokenType.Array:
+                foreach (JToken result in ((JArray)resultToken).ChildrenTokens)
                 {
-                    using (HttpResponseMessage response = await httpClient.GetAsync(source, cancellationToken))
-                    {
-                        response.EnsureSuccessStatusCode();
-                        using (Stream responseStream = await response.Content.ReadAsStreamAsync())
-                        {
-                            return await ProcessSourceStream(responseStream, sourceTransform, cancellationToken);
-                        }
-                    }
+                    results.Add(result);
                 }
+                break;
+            case JTokenType.Object:
+                results.Add(resultToken);
+                break;
+            case JTokenType.Null:
+            case JTokenType.Undefined:
+                //consider it empty result
+                break;
+            case JTokenType.Integer:
+            case JTokenType.Float:
+            case JTokenType.String:
+            case JTokenType.Boolean:
+            default:
+                throw new Exception($"Invalid objects list query should return an Array or Object. It returned {resultToken.Type} ('{resultToken.ToFlatString()}')");
             }
-            else
-            {
-                using (Stream fileStream = new FileStream(source, FileMode.Open, FileAccess.Read))
-                {
-                    return await ProcessSourceStream(fileStream, sourceTransform, cancellationToken);
-                }
-            }
-        }
 
-        private static Task<JToken> ProcessSourceStream(Stream sourceStream, EntityProviderSpec.ESourceTransform sourceTransform, CancellationToken cancellationToken)
-        {
-            return sourceTransform switch {
-                EntityProviderSpec.ESourceTransform.none => ParseJsonStream(sourceStream, cancellationToken),
-                EntityProviderSpec.ESourceTransform.xml2json => TransformXml2Json(sourceStream, cancellationToken),
-                _ => throw new Exception("Unexpected transform " + sourceTransform),
-            };
-        }
-
-        private static Task<JToken> ParseJsonStream(Stream sourceStream, CancellationToken cancellationToken)
-        {
-            using (StreamReader reader = new StreamReader(sourceStream))
-            {
-                JToken result = JToken.Parse(reader);
-                return Task.FromResult(result);
-            }
-        }
-
-        private static async Task<JToken> TransformXml2Json(Stream sourceStream, CancellationToken cancellationToken)
-        {
-            XDocument xml = await XDocument.LoadAsync(sourceStream, LoadOptions.PreserveWhitespace, cancellationToken);
-            Xml2JsonConverter converter = new Xml2JsonConverter();
-            return converter.Convert(xml);
+            return Task.FromResult(results);
         }
     }
 }
