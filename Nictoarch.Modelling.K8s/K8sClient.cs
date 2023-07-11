@@ -14,6 +14,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Jsonata.Net.Native;
 using Jsonata.Net.Native.Json;
 using k8s;
 using k8s.Authentication;
@@ -32,6 +33,9 @@ namespace Nictoarch.Modelling.K8s
         private readonly Uri m_baseUri;
         private readonly string m_tlsServerName;
         private readonly ServiceClientCredentials m_clientCredentials;
+
+        private readonly object m_apiInfosLock = new object();
+        private IReadOnlyList<ApiInfo>? m_apiInfos = null;
 
         internal static KubernetesClientConfiguration GetConfiguration(ProviderConfig.ConnectViaType connectVia, string? configFile, double? httpClientTimeoutSeconds = null)
         {
@@ -143,7 +147,6 @@ namespace Nictoarch.Modelling.K8s
             };
         }
 
-
         //see https://iximiuz.com/en/posts/kubernetes-api-structure-and-terminology/
         internal async Task<IReadOnlyList<JToken>> GetResources(string apiGroup, string resourceKind, string? @namespace, string? labelSelector, CancellationToken cancellationToken)
         {
@@ -211,6 +214,70 @@ namespace Nictoarch.Modelling.K8s
 
             JArray resultList = (JArray)resultObj.Properties["items"];
             return resultList.ChildrenTokens;
+        }
+
+        internal async Task<IReadOnlyList<ApiInfo>> GetApiInfosCached(CancellationToken cancellationToken)
+        {
+            if (this.m_apiInfos == null)
+            {
+                IReadOnlyList<ApiInfo> apiInfos = await this.RequestApiInfos(cancellationToken);
+                lock (this.m_apiInfosLock)
+                {
+                    if (this.m_apiInfos == null)
+                    {
+                        this.m_apiInfos = apiInfos;
+                    }
+                }
+            }
+            return this.m_apiInfos;
+        }
+
+        private async Task<IReadOnlyList<ApiInfo>> RequestApiInfos(CancellationToken cancellationToken)
+        {
+            List<ApiInfo> result = new List<ApiInfo>();
+
+            JsonataQuery mainQuery = new JsonataQuery(@"
+                $.resources[""list"" in verbs].{
+                    ""api_group"": $group,
+                    ""resource_singular"": $lowercase(`kind`),
+                    ""resource_plural"": `name`,
+                    ""namespaced"": `namespaced`
+                }
+            ");
+
+            //check old classic core api
+            {
+                JToken queryResult = await this.SendRequest("api/v1", HttpMethod.Get, null, null, cancellationToken);
+
+                JObject bindings = new JObject();
+                bindings.Set("group", new JValue("core/v1"));
+
+                JToken transformed = mainQuery.Eval(queryResult, bindings);
+                List<ApiInfo> currentResults = transformed.ToObject<List<ApiInfo>>();
+                result.AddRange(currentResults);
+            }
+
+            //new apis
+            {
+                JToken groupsJson = await this.SendRequest("apis", HttpMethod.Get, null, null, cancellationToken);
+                JsonataQuery groupsQuery = new JsonataQuery(@"$.groups.preferredVersion.groupVersion");
+                JToken groupsTransformed = groupsQuery.Eval(groupsJson);
+                List<string> groups = groupsTransformed.ToObject<List<string>>();
+
+                foreach (string group in groups)
+                {
+                    JToken queryResult = await this.SendRequest("apis/" + group, HttpMethod.Get, null, null, cancellationToken);
+
+                    JObject bindings = new JObject();
+                    bindings.Set("group", new JValue(group));
+
+                    JToken transformed = mainQuery.Eval(queryResult, bindings);
+                    List<ApiInfo> currentResults = transformed.ToObject<List<ApiInfo>>();
+                    result.AddRange(currentResults);
+                }
+            }
+
+            return result;
         }
 
         private Task<JToken> SendRequest(string relativeUri, HttpMethod method, IReadOnlyDictionary<string, IReadOnlyList<string>>? customHeaders, object? body, CancellationToken cancellationToken)

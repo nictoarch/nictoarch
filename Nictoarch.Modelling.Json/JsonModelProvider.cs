@@ -52,7 +52,7 @@ namespace Nictoarch.Modelling.Drawio
             List<Entity> entities = new List<Entity>(resultArray.Count);
             foreach (JToken token in resultArray.ChildrenTokens)
             {
-                entities.Add(JsonDeserialzier.EntityFromJson(token));
+                entities.Add(token.ToObject<Entity>());
                 cancellationToken.ThrowIfCancellationRequested();
             }
 
