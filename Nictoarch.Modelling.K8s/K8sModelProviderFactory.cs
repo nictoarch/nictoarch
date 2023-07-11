@@ -13,11 +13,11 @@ using Nictoarch.Modelling.K8s.Spec;
 
 namespace Nictoarch.Modelling.K8s
 {
-    public sealed class K8sModelProviderFactory : IModelProviderFactory<ProviderConfig, EntitySelector, SelectorBase>
+    public sealed class K8sModelProviderFactory : IModelProviderFactory<ProviderConfig, EntitySelector, ValidationSelector>
     {
         string IModelProviderFactory.Name => "k8s";
 
-        Task<IModelProvider> IModelProviderFactory<ProviderConfig, EntitySelector, SelectorBase>.GetProviderAsync(ProviderConfig config, CancellationToken cancellationToken)
+        Task<IModelProvider> IModelProviderFactory<ProviderConfig, EntitySelector, ValidationSelector>.GetProviderAsync(ProviderConfig config, CancellationToken cancellationToken)
         {
             KubernetesClientConfiguration k8sConfig = config.GetK8sConfiguration();
             List<Entity> results = new List<Entity>();

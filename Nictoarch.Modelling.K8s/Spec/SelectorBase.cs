@@ -12,7 +12,7 @@ using YamlDotNet.Core.Events;
 
 namespace Nictoarch.Modelling.K8s.Spec
 {
-    public class SelectorBase: IYamlOnDeserialized
+    public abstract class SelectorBase: IYamlOnDeserialized
     {
         [Required] public string api_group { get; set; } = default!; //eg "apps" or "apps/v1". use "v1" or "core" for core resources
         [Required] public string resource_kind { get; set; } = default!; //eg "deployment" or "deployments"
@@ -20,17 +20,9 @@ namespace Nictoarch.Modelling.K8s.Spec
         public string? label_query { get; set; } //null or valid label selector, see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
 
         public string? filter_expr { get; set; } = null;
-
-        [Required] public string domain_id_expr { get; set; } = "metadata.uid";
-        [Required] public string semantic_id_expr { get; set; } = "metadata.name & '@' & metadata.namespace";
-        [Required] public string display_name_expr { get; set; } = "metadata.name & '@' & metadata.namespace";
-
-        internal JsonataQuery domainIdQuery = default!;
-        internal JsonataQuery semanticIdQuery = default!;
-        internal JsonataQuery displayNameQuery = default!;
         internal JsonataQuery? filterQuery = null;
 
-        void IYamlOnDeserialized.OnDeserialized(ParsingEvent parsingEvent)
+        public virtual void OnDeserialized(ParsingEvent parsingEvent)
         {
             if (this.@namespace == "")
             {
@@ -52,33 +44,6 @@ namespace Nictoarch.Modelling.K8s.Spec
             catch (Exception ex)
             {
                 throw new YamlException(parsingEvent.Start, parsingEvent.End, $"Failed to parse '{nameof(this.filter_expr)}': {ex.Message}", ex);
-            }
-
-            try
-            {
-                this.domainIdQuery = new JsonataQuery(this.domain_id_expr);
-            }
-            catch (Exception ex)
-            {
-                throw new YamlException(parsingEvent.Start, parsingEvent.End, $"Failed to parse '{nameof(this.domain_id_expr)}': {ex.Message}", ex);
-            }
-
-            try
-            {
-                this.semanticIdQuery = new JsonataQuery(this.semantic_id_expr);
-            }
-            catch (Exception ex)
-            {
-                throw new YamlException(parsingEvent.Start, parsingEvent.End, $"Failed to parse '{nameof(this.semantic_id_expr)}': {ex.Message}", ex);
-            }
-
-            try
-            {
-                this.displayNameQuery = new JsonataQuery(this.display_name_expr);
-            }
-            catch (Exception ex)
-            {
-                throw new YamlException(parsingEvent.Start, parsingEvent.End, $"Failed to parse '{nameof(this.display_name_expr)}': {ex.Message}", ex);
             }
         }
     }

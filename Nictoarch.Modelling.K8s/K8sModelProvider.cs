@@ -13,7 +13,7 @@ using Nictoarch.Modelling.K8s.Spec;
 
 namespace Nictoarch.Modelling.K8s
 {
-    public sealed class K8sModelProvider : IModelProvider<EntitySelector, SelectorBase>
+    public sealed class K8sModelProvider : IModelProvider<EntitySelector, ValidationSelector>
     {
         private readonly K8sClient m_client;
 
@@ -27,7 +27,7 @@ namespace Nictoarch.Modelling.K8s
             this.m_client.Dispose();
         }
 
-        async Task<List<Entity>> IModelProvider<EntitySelector, SelectorBase>.GetEntitiesAsync(EntitySelector entitySelector, CancellationToken cancellationToken)
+        async Task<List<Entity>> IModelProvider<EntitySelector, ValidationSelector>.GetEntitiesAsync(EntitySelector entitySelector, CancellationToken cancellationToken)
         {
             IReadOnlyList<JToken> resources = await this.GetResources(entitySelector, cancellationToken);
             List<Entity> results = new List<Entity>(resources.Count);
@@ -40,13 +40,28 @@ namespace Nictoarch.Modelling.K8s
             return results;
         }
 
-        async Task<List<object>> IModelProvider<EntitySelector, SelectorBase>.GetInvalidObjectsAsync(SelectorBase objectSelector, CancellationToken cancellationToken)
+        async Task<List<object>> IModelProvider<EntitySelector, ValidationSelector>.GetInvalidObjectsAsync(ValidationSelector objectSelector, CancellationToken cancellationToken)
         {
             IReadOnlyList<JToken> resources = await this.GetResources(objectSelector, cancellationToken);
             List<object> results = new List<object>(resources.Count);
             foreach (JToken resource in resources)
             {
-                results.Add(resource);
+                if (objectSelector.transformQuery != null)
+                {
+                    try
+                    {
+                        JToken transformed = objectSelector.transformQuery.Eval(resource);
+                        results.Add(transformed);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"Failed to execute transform query for get invalid object: {ex.Message}", ex);
+                    }
+                }
+                else
+                {
+                    results.Add(resource);
+                }
                 cancellationToken.ThrowIfCancellationRequested();
             }
             return results;
