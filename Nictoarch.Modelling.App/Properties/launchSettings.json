@@ -1,0 +1,11 @@
+{
+    "profiles": {
+        "no args": {
+            "commandName": "Project"
+        },
+        "k8s res": {
+            "commandName": "Project",
+            "commandLineArgs": "k8s res"
+        }
+    }
+}

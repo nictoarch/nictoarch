@@ -242,7 +242,7 @@ namespace Nictoarch.Modelling.K8s
                     ""resource_singular"": $lowercase(`kind`),
                     ""resource_plural"": `name`,
                     ""namespaced"": `namespaced`
-                }
+                }[]
             ");
 
             //check old classic core api
@@ -272,6 +272,11 @@ namespace Nictoarch.Modelling.K8s
                     bindings.Set("group", new JValue(group));
 
                     JToken transformed = mainQuery.Eval(queryResult, bindings);
+                    if (transformed.Type == JTokenType.Undefined)
+                    {
+                        //no match at all
+                        continue;
+                    }
                     List<ApiInfo> currentResults = transformed.ToObject<List<ApiInfo>>();
                     result.AddRange(currentResults);
                 }

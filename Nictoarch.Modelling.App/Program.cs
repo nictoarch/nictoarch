@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Nictoarch.Common;
 using Nictoarch.Modelling.Core;
+using Nictoarch.Modelling.Core.AppSupport;
 using Nictoarch.Modelling.Core.Elements;
 using NLog;
 
@@ -22,7 +23,7 @@ namespace Nictoarch.Modelling.App
 
         private static async Task<int> MainInternal(string[] args)
         {
-            RootCommand rootCommand = new RootCommand("Sample app for System.CommandLine");
+            RootCommand rootCommand = new RootCommand($"{nameof(Nictoarch)} modelling App");
 
             {
                 Command exportModelCommand = new Command("extract-model", "Extract model accoring to spec-file");
@@ -67,6 +68,9 @@ namespace Nictoarch.Modelling.App
                 );
                 rootCommand.AddCommand(compareModelsCommand);
             }
+
+            AppExtensionsRegistry extensionRegistry = new AppExtensionsRegistry();
+            extensionRegistry.PopulateRootCommand(rootCommand);
 
             return await rootCommand.InvokeAsync(args);
         }
