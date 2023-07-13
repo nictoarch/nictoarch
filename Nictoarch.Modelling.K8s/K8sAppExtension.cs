@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using IdentityModel.Client;
 using Jsonata.Net.Native.Json;
 using k8s;
 using Nictoarch.Modelling.Core.AppSupport;

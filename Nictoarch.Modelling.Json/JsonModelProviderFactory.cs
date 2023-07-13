@@ -10,9 +10,8 @@ using Jsonata.Net.Native.Json;
 using Nictoarch.Common.Xml2Json;
 using Nictoarch.Modelling.Core;
 using Nictoarch.Modelling.Core.Elements;
-using Nictoarch.Modelling.Json;
 
-namespace Nictoarch.Modelling.Drawio
+namespace Nictoarch.Modelling.Json
 {
     public sealed class JsonModelProviderFactory : IModelProviderFactory<ProviderConfig, QuerySelector, QuerySelector>
     {
@@ -23,7 +22,7 @@ namespace Nictoarch.Modelling.Drawio
             JToken json;
             try
             {
-                json = await this.ReadJson(config.source, config.source_transform, cancellationToken);
+                json = await ReadJson(config.source, config.source_transform, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -37,14 +36,14 @@ namespace Nictoarch.Modelling.Drawio
         {
             if (source.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || source.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
-                using (HttpClient httpClient = new HttpClient()) 
+                using (HttpClient httpClient = new HttpClient())
                 {
                     using (HttpResponseMessage response = await httpClient.GetAsync(source, cancellationToken))
                     {
                         response.EnsureSuccessStatusCode();
                         using (Stream responseStream = await response.Content.ReadAsStreamAsync())
                         {
-                            return await this.ProcessSourceStream(responseStream, sourceTransform, cancellationToken);
+                            return await ProcessSourceStream(responseStream, sourceTransform, cancellationToken);
                         }
                     }
                 }
@@ -53,7 +52,7 @@ namespace Nictoarch.Modelling.Drawio
             {
                 using (Stream fileStream = new FileStream(source, FileMode.Open, FileAccess.Read))
                 {
-                    return await this.ProcessSourceStream(fileStream, sourceTransform, cancellationToken);
+                    return await ProcessSourceStream(fileStream, sourceTransform, cancellationToken);
                 }
             }
         }
@@ -61,8 +60,8 @@ namespace Nictoarch.Modelling.Drawio
         private Task<JToken> ProcessSourceStream(Stream sourceStream, ProviderConfig.ESourceTransform sourceTransform, CancellationToken cancellationToken)
         {
             return sourceTransform switch {
-                ProviderConfig.ESourceTransform.none => this.ParseJsonStream(sourceStream, cancellationToken),
-                ProviderConfig.ESourceTransform.xml2json => this.TransformXml2Json(sourceStream, cancellationToken),
+                ProviderConfig.ESourceTransform.none => ParseJsonStream(sourceStream, cancellationToken),
+                ProviderConfig.ESourceTransform.xml2json => TransformXml2Json(sourceStream, cancellationToken),
                 _ => throw new Exception("Unexpected transform " + sourceTransform),
             };
         }

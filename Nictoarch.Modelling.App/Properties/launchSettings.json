@@ -6,6 +6,10 @@
         "k8s res": {
             "commandName": "Project",
             "commandLineArgs": "k8s res"
+        },
+        "json xml": {
+            "commandName": "Project",
+            "commandLineArgs": "json xml ../../../../Nictoarch.Common.Xml2Json.Tests/data/drawio.small.xml -o ./drawio.small.xml.json"
         }
     }
 }

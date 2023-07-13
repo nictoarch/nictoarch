@@ -11,9 +11,8 @@ using Jsonata.Net.Native.Json;
 using Nictoarch.Common.Xml2Json;
 using Nictoarch.Modelling.Core;
 using Nictoarch.Modelling.Core.Elements;
-using Nictoarch.Modelling.Json;
 
-namespace Nictoarch.Modelling.Drawio
+namespace Nictoarch.Modelling.Json
 {
     public sealed class JsonModelProvider : IModelProvider<QuerySelector, QuerySelector>
     {
