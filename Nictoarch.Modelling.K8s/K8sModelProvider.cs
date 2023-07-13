@@ -117,12 +117,13 @@ namespace Nictoarch.Modelling.K8s
             string semanticId = this.EvaluateValueExpression(resource, entitySelector.semanticIdQuery, nameof(entitySelector.semantic_id_expr), entitySelector.semantic_id_expr);
             string displayName = this.EvaluateValueExpression(resource, entitySelector.displayNameQuery, nameof(entitySelector.display_name_expr), entitySelector.display_name_expr);
 
-            Entity entity = new Entity(
-                type: entitySelector.entity_type!,
-                domain_id: domainId,
-                semantic_id: semanticId,
-                display_name: displayName
-            );
+            Entity entity = new Entity() {
+                type = entitySelector.entity_type!,
+                domain_id = domainId,
+                semantic_id = semanticId,
+                display_name = displayName
+            };
+            entity.Validate();
 
             return entity;
         }

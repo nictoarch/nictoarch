@@ -10,18 +10,17 @@ namespace Nictoarch.Modelling.Core.Elements
 {
     public sealed class Entity
     {
-        public string type { get; }
-        public string domain_id { get; }
-        public string semantic_id { get; }
-        public string display_name { get; }
+        public string type { get; set; } = default!;
+        public string domain_id { get; set; } = default!;
+        public string semantic_id { get; set; } = default!;
+        public string display_name { get; set; } = default!;
 
-        [JsonConstructor]
-        public Entity(string type, string domain_id, string semantic_id, string display_name)
+        public void Validate()
         {
-            this.type = type ?? throw new ArgumentNullException(nameof(type));
-            this.domain_id = domain_id ?? throw new ArgumentNullException(nameof(domain_id));
-            this.semantic_id = semantic_id ?? throw new ArgumentNullException(nameof(semantic_id));
-            this.display_name = display_name ?? throw new ArgumentNullException(nameof(display_name));
+            ArgumentException.ThrowIfNullOrEmpty(this.type, nameof(this.type));
+            ArgumentException.ThrowIfNullOrEmpty(this.domain_id, nameof(this.domain_id));
+            ArgumentException.ThrowIfNullOrEmpty(this.semantic_id, nameof(this.semantic_id));
+            ArgumentException.ThrowIfNullOrEmpty(this.display_name, nameof(this.display_name));
         }
 
         public JObject ToJson()

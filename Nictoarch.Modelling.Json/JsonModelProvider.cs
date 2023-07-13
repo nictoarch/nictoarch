@@ -51,7 +51,9 @@ namespace Nictoarch.Modelling.Json
             List<Entity> entities = new List<Entity>(resultArray.Count);
             foreach (JToken token in resultArray.ChildrenTokens)
             {
-                entities.Add(token.ToObject<Entity>());
+                Entity entity = token.ToObject<Entity>();
+                entity.Validate();
+                entities.Add(entity);
                 cancellationToken.ThrowIfCancellationRequested();
             }
 
