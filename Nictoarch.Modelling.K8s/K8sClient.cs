@@ -148,21 +148,33 @@ namespace Nictoarch.Modelling.K8s
         }
 
         //see https://iximiuz.com/en/posts/kubernetes-api-structure-and-terminology/
-        internal async Task<IReadOnlyList<JToken>> GetResources(string apiGroup, string resourceKind, string? @namespace, string? labelSelector, CancellationToken cancellationToken)
+        internal async Task<IReadOnlyList<JToken>> GetResources(string? apiGroup, string resourceKind, string? @namespace, string? labelSelector, CancellationToken cancellationToken)
         {
+            IReadOnlyList<ApiInfo> apis = await this.GetApiInfosCached(cancellationToken);
+
             //TODO: use proper way to get plural names, but it looks rather ok for now
             string resourcePlural;
             string resourceSingular;
-            
-            if (resourceKind.EndsWith("s"))
+
+            //get singular/plural and api group
             {
-                resourceSingular = resourceKind.Substring(0, resourceKind.Length - 1);
-                resourcePlural = resourceKind;
-            }
-            else
-            {
-                resourceSingular = resourceKind;
-                resourcePlural = resourceKind + "s";
+                ApiInfo? resourceInfo = apis.FirstOrDefault(a => a.resource_singular == resourceKind);
+                if (resourceInfo == null)
+                {
+                    resourceInfo = apis.FirstOrDefault(a => a.resource_plural == resourceKind);
+                }
+
+                if (resourceInfo == null)
+                {
+                    throw new Exception($"Unable to find resource with kind '{resourceKind}'");
+                }
+                resourceSingular = resourceInfo.resource_singular;
+                resourcePlural = resourceInfo.resource_plural;
+
+                if (apiGroup == null)
+                {
+                    apiGroup = resourceInfo.api_group;
+                }
             }
 
             string relativeUri;
@@ -250,7 +262,7 @@ namespace Nictoarch.Modelling.K8s
                 JToken queryResult = await this.SendRequest("api/v1", HttpMethod.Get, null, null, cancellationToken);
 
                 JObject bindings = new JObject();
-                bindings.Set("group", new JValue("core/v1"));
+                bindings.Set("group", new JValue("v1"));
 
                 JToken transformed = mainQuery.Eval(queryResult, bindings);
                 List<ApiInfo> currentResults = transformed.ToObject<List<ApiInfo>>();

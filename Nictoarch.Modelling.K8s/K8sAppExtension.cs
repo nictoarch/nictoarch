@@ -31,10 +31,12 @@ namespace Nictoarch.Modelling.K8s
 
                 Option<string?> configFileOption = new Option<string?>(new string[] { "--config", "-c" }, () => null, "Config file location");
                 listApisCommand.Add(configFileOption);
+                Option<bool> detailsOption = new Option<bool>(new string[] { "--details", "-d" }, () => false, "Output all details");
+                listApisCommand.Add(detailsOption);
 
                 listApisCommand.SetHandler(
                     this.ListApisCommand,
-                    configFileOption
+                    configFileOption, detailsOption
                 );
 
                 result.Add(listApisCommand);
@@ -43,7 +45,7 @@ namespace Nictoarch.Modelling.K8s
             return result;
         }
 
-        private async Task ListApisCommand(string? configFileName)
+        private async Task ListApisCommand(string? configFileName, bool showDetails)
         {
             if (configFileName != null)
             {
@@ -54,8 +56,18 @@ namespace Nictoarch.Modelling.K8s
             using (K8sClient client = new K8sClient(config))
             {
                 IReadOnlyList<ApiInfo> apis = await client.GetApiInfosCached(CancellationToken.None);
-                JToken result = JToken.FromObject(apis);
-                Console.WriteLine(result.ToIndentedString());
+                if (showDetails)
+                {
+                    JToken result = JToken.FromObject(apis);
+                    Console.WriteLine(result.ToIndentedString());
+                }
+                else
+                {
+                    foreach (ApiInfo api in apis)
+                    {
+                        Console.WriteLine(api.resource_singular);
+                    }
+                }
             }
         }
     }

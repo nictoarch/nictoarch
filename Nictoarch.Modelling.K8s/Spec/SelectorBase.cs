@@ -14,7 +14,7 @@ namespace Nictoarch.Modelling.K8s.Spec
 {
     public abstract class SelectorBase: IYamlOnDeserialized
     {
-        [Required] public string api_group { get; set; } = default!; //eg "apps" or "apps/v1". use "v1" or "core" for core resources
+        public string? api_group { get; set; } = null; //eg "apps" or "apps/v1". use "v1" or "core" for core resources
         [Required] public string resource_kind { get; set; } = default!; //eg "deployment" or "deployments"
         public string? @namespace { get; set; } //null or namespace name
         public string? label_query { get; set; } //null or valid label selector, see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
