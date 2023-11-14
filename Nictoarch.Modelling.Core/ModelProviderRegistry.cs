@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Nictoarch.Modelling.Core.Elements;
 using NLog;
+using YamlDotNet.Serialization;
 
 namespace Nictoarch.Modelling.Core
 {
@@ -71,6 +72,14 @@ namespace Nictoarch.Modelling.Core
             }
         }
 
+        internal void ConfigureYamlDeserialzier(DeserializerBuilder builder)
+        {
+            foreach (ModelProviderFactory factory in this.m_providerFactories.Values)
+            {
+                factory.ConfigureYamlDeserialzier(builder);
+            }
+        }
+
         internal bool GetProviderFactory(string name, [NotNullWhen(true)] out ModelProviderFactory? factory)
         {
             return this.m_providerFactories.TryGetValue(name, out factory);
@@ -105,6 +114,11 @@ namespace Nictoarch.Modelling.Core
                 this.m_getInvalidObjectsMethod = typeof(IModelProvider<,>)
                     .MakeGenericType(this.EntityConfigType, this.ValidationConfigType)
                     .GetMethod(nameof(IModelProvider<object, object>.GetInvalidObjectsAsync))!;
+            }
+
+            internal void ConfigureYamlDeserialzier(DeserializerBuilder builder)
+            {
+                this.m_factoryInstance.ConfigureYamlDeserialzier(builder);
             }
 
             internal Task<IModelProvider> GetProviderAsync(object config, CancellationToken cancellationToken)

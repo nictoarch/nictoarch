@@ -10,12 +10,18 @@ using k8s;
 using Nictoarch.Modelling.Core;
 using Nictoarch.Modelling.Core.Elements;
 using Nictoarch.Modelling.K8s.Spec;
+using YamlDotNet.Serialization;
 
 namespace Nictoarch.Modelling.K8s
 {
     public sealed class K8sModelProviderFactory : IModelProviderFactory<ProviderConfig, EntitySelector, ValidationSelector>
     {
         string IModelProviderFactory.Name => "k8s";
+
+        void IModelProviderFactory.ConfigureYamlDeserialzier(DeserializerBuilder builder)
+        {
+            //nothing to do
+        }
 
         Task<IModelProvider> IModelProviderFactory<ProviderConfig, EntitySelector, ValidationSelector>.GetProviderAsync(ProviderConfig config, CancellationToken cancellationToken)
         {

@@ -6,12 +6,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Jsonata.Net.Native.Json;
 using Nictoarch.Modelling.Core.Elements;
+using YamlDotNet.Serialization;
 
 namespace Nictoarch.Modelling.Core
 {
     public interface IModelProviderFactory
     {
         string Name { get; }
+        void ConfigureYamlDeserialzier(DeserializerBuilder builder);
     }
 
     public interface IModelProviderFactory<TConfig, TEntitySpec, TValidationSpec> : IModelProviderFactory

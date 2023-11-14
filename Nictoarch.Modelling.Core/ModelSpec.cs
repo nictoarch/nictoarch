@@ -33,10 +33,11 @@ namespace Nictoarch.Modelling.Core
 
         public static ModelSpec Load(TextReader reader, ModelProviderRegistry registry)
         {
-            IDeserializer deserializer = new DeserializerBuilder()
+            DeserializerBuilder builder = new DeserializerBuilder()
                 .WithObjectFactory(new ModelRegistryObjectFactory(registry))
-                .WithNodeDeserializer(inner => new ValidatingDeserializer(inner), s => s.InsteadOf<ObjectNodeDeserializer>())
-                .Build();
+                .WithNodeDeserializer(inner => new ValidatingDeserializer(inner), s => s.InsteadOf<ObjectNodeDeserializer>());
+            registry.ConfigureYamlDeserialzier(builder);
+            IDeserializer deserializer = builder.Build();
 
             ModelSpecImpl spec = deserializer.Deserialize<ModelSpecImpl>(reader);
 

@@ -10,6 +10,7 @@ using Jsonata.Net.Native.Json;
 using Nictoarch.Common.Xml2Json;
 using Nictoarch.Modelling.Core;
 using Nictoarch.Modelling.Core.Elements;
+using YamlDotNet.Serialization;
 
 namespace Nictoarch.Modelling.Json
 {
@@ -17,12 +18,26 @@ namespace Nictoarch.Modelling.Json
     {
         string IModelProviderFactory.Name => "json";
 
+        void IModelProviderFactory.ConfigureYamlDeserialzier(DeserializerBuilder builder)
+        {
+            //see https://github.com/aaubry/YamlDotNet/wiki/Deserialization---Type-Discriminators#determining-type-based-on-the-value-of-a-key
+            builder.WithTypeDiscriminatingNodeDeserializer( (options) => {
+                options.AddKeyValueTypeDiscriminator<ProviderConfig.Auth>(
+                    discriminatorKey: nameof(ProviderConfig.Auth.type), 
+                    valueTypeMapping: new Dictionary<string, Type> {
+                        { ProviderConfig.NoneAuth.TYPE, typeof(ProviderConfig.NoneAuth) },
+                        { ProviderConfig.BasicAuth.TYPE, typeof(ProviderConfig.BasicAuth) },
+                    }
+                );
+            });
+        }
+
         async Task<IModelProvider> IModelProviderFactory<ProviderConfig, QuerySelector, QuerySelector>.GetProviderAsync(ProviderConfig config, CancellationToken cancellationToken)
         {
             JToken json;
             try
             {
-                json = await ReadJson(config.source, config.source_transform, cancellationToken);
+                json = await ReadJson(config.source, config.auth, config.source_transform, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -32,13 +47,18 @@ namespace Nictoarch.Modelling.Json
             return new JsonModelProvider(json);
         }
 
-        private async Task<JToken> ReadJson(string source, ProviderConfig.ESourceTransform sourceTransform, CancellationToken cancellationToken)
+        private async Task<JToken> ReadJson(string source, ProviderConfig.Auth? auth, ProviderConfig.ESourceTransform sourceTransform, CancellationToken cancellationToken)
         {
             if (source.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || source.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
                 using (HttpClient httpClient = new HttpClient())
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, source))
                 {
-                    using (HttpResponseMessage response = await httpClient.GetAsync(source, cancellationToken))
+                    if (auth != null)
+                    {
+                        request.Headers.Authorization = auth.CreateHeader();
+                    }
+                    using (HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken))
                     {
                         response.EnsureSuccessStatusCode();
                         using (Stream responseStream = await response.Content.ReadAsStreamAsync())
