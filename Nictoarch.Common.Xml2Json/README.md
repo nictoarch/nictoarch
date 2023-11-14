@@ -149,7 +149,7 @@
 {
   "_type": "p", 
   "_value": "This  an !",
-  "@nested": [
+  "_nested": [
     {
       "_type": "b",
       "att": "val",

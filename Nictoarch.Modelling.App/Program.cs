@@ -181,7 +181,7 @@ namespace Nictoarch.Modelling.App
 
             s_logger.Info("Retrieving model " + modelSpec.Name);
             Model model = await modelSpec.GetModelAsync();
-            s_logger.Info($"Got {model.entities?.Count ?? 0} entities, and {model.links?.Count ?? 0} links");
+            s_logger.Info($"Got {model.entities?.Count ?? 0} entities, and {model.links?.Count ?? 0} links. Invalid objects count: {model.invalid_objects?.Count}");
 
             return model;
         }
