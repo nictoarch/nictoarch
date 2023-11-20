@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Jsonata.Net.Native;
+using Jsonata.Net.Native.Json;
 using Nictoarch.Modelling.Core.Elements;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
@@ -12,9 +14,66 @@ using YamlDotNet.Serialization;
 
 namespace Nictoarch.Modelling.Core.Yaml
 {
-    internal sealed class ModelSpecImpl
+    public sealed class ModelSpecImpl
     {
         [Required] public string name { get; set; } = default!;
+        [Required] public List<DataPart> data { get; set; } = default!;
+
+
+        public sealed class DataPart
+        {
+            [Required] public SourceBase source { get; set; } = default!;
+            [Required] public List<Element> elements { get; set; } = default!;
+        }
+
+        public abstract class SourceBase
+        {
+            [Required] public string type { get; set; } = default!;
+        }
+
+        public sealed class Element
+        {
+            [Required] public object extract { get; set; } = default!;
+            public JsonataQuery? filter { get; set; }
+            public EntitiesSelectorBase? entities { get; set; }
+            public JsonataQuery? invalid { get; set; }
+        }
+
+        public abstract class EntitiesSelectorBase
+        {
+            public abstract List<Entity> GetEntities(JToken extractedData);
+        }
+
+        public sealed class EntitiesSelectorSingleQuery: EntitiesSelectorBase
+        {
+            private readonly JsonataQuery m_query;
+
+            internal EntitiesSelectorSingleQuery(JsonataQuery query)
+            {
+                this.m_query = query;
+            }
+
+            public override List<Entity> GetEntities(JToken extractedData)
+            {
+                this.m_query.Eval(extractedData);
+                throw new NotImplementedException("Todo");
+            }
+        }
+
+        public sealed class EntitesSelectorQueryPerField: EntitiesSelectorBase
+        {
+            [Required] public JsonataQuery type { get; set; } = default!;
+            [Required] public JsonataQuery semantic_id { get; set; } = default!;
+            public JsonataQuery? domain_id { get; set; }
+            public JsonataQuery? display_name { get; set; }
+
+            public override List<Entity> GetEntities(JToken extractedData)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        /*
         [Required] public List<ModelProviderSpec> providers { get; set; } = default!;
 
         public sealed class ModelProviderSpec : IYamlConvertible
@@ -128,5 +187,6 @@ namespace Nictoarch.Modelling.Core.Yaml
                 }
             }
         }
+        */
     }
 }

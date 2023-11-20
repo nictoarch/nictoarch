@@ -34,12 +34,29 @@ namespace Nictoarch.Modelling.Core
         public static ModelSpec Load(TextReader reader, ModelProviderRegistry registry)
         {
             DeserializerBuilder builder = new DeserializerBuilder()
-                .WithObjectFactory(new ModelRegistryObjectFactory(registry))
-                .WithNodeDeserializer(inner => new ValidatingDeserializer(inner), s => s.InsteadOf<ObjectNodeDeserializer>());
+                //.WithObjectFactory(new ModelRegistryObjectFactory(registry))
+
+                //see https://github.com/aaubry/YamlDotNet/wiki/Serialization.Deserializer#withnodedeserializer
+                .WithNodeDeserializer(
+                    nodeDeserializerFactory: innerDeserialzier => new ValidatingDeserializer(innerDeserialzier), 
+                    where: syntax => syntax.InsteadOf<ObjectNodeDeserializer>()
+                )
+                .WithTypeConverter(new JsonataQueryYamlConverter())
+                ;
+
             registry.ConfigureYamlDeserialzier(builder);
+
             IDeserializer deserializer = builder.Build();
 
-            ModelSpecImpl spec = deserializer.Deserialize<ModelSpecImpl>(reader);
+            ModelSpecImpl spec;
+            try
+            {
+                spec = deserializer.Deserialize<ModelSpecImpl>(reader);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to deserialzie model spec file >> " + ex.JoinInnerMessages(" >> "), ex);
+            }
 
             return new ModelSpec(spec);
         }
@@ -50,6 +67,7 @@ namespace Nictoarch.Modelling.Core
             List<Link> links = new List<Link>();
             List<object> invalidObjects = new List<object>();
 
+            /*
             foreach (ModelSpecImpl.ModelProviderSpec providerSpec in this.m_spec.providers)
             {
                 await providerSpec.ProcessAsync(entities, links, invalidObjects, cancellationToken);
@@ -57,6 +75,10 @@ namespace Nictoarch.Modelling.Core
             }
 
             return new Model(this.m_spec.name, entities, links, invalidObjects);
+            */
+
+            await Task.CompletedTask;
+            throw new NotImplementedException("TODO");
         }
     }
 }

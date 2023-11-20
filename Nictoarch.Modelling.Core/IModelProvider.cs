@@ -6,24 +6,25 @@ using System.Threading;
 using System.Threading.Tasks;
 using Jsonata.Net.Native.Json;
 using Nictoarch.Modelling.Core.Elements;
+using Nictoarch.Modelling.Core.Yaml;
 using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.BufferedDeserialization;
 
 namespace Nictoarch.Modelling.Core
 {
     public interface IModelProviderFactory
     {
         string Name { get; }
-        void ConfigureYamlDeserialzier(DeserializerBuilder builder);
+        void AddYamlTypeDiscriminators(ITypeDiscriminatingNodeDeserializerOptions opts);
     }
 
-    public interface IModelProviderFactory<TConfig, TEntitySpec, TValidationSpec> : IModelProviderFactory
-        where TConfig : class
-        where TEntitySpec : class
-        where TValidationSpec : class
+    public interface IModelProviderFactory<TConfig> : IModelProviderFactory
+        where TConfig : ModelSpecImpl.SourceBase
     {
-        Task<IModelProvider> GetProviderAsync(TConfig config, CancellationToken cancellationToken);
+        //Task<IModelProvider> GetProviderAsync(TConfig config, CancellationToken cancellationToken);
     }
 
+    /*
     public interface IModelProvider: IDisposable
     {
     }
@@ -35,4 +36,5 @@ namespace Nictoarch.Modelling.Core
         Task<List<Entity>> GetEntitiesAsync(TEntitySpec spec, CancellationToken cancellationToken);
         Task<List<object>> GetInvalidObjectsAsync(TValidationSpec spec, CancellationToken cancellationToken);
     }
+    */
 }

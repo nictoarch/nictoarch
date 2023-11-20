@@ -14,6 +14,7 @@ using Nictoarch.Modelling.Core.Elements;
 
 namespace Nictoarch.Modelling.Json
 {
+    /*
     public sealed class JsonModelProvider : IModelProvider<QuerySelector, QuerySelector>
     {
         private readonly JToken m_json;
@@ -100,4 +101,5 @@ namespace Nictoarch.Modelling.Json
             return Task.FromResult(results);
         }
     }
+    */
 }

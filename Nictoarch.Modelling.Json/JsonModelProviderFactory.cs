@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.CommandLine;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -10,28 +11,32 @@ using Jsonata.Net.Native.Json;
 using Nictoarch.Common.Xml2Json;
 using Nictoarch.Modelling.Core;
 using Nictoarch.Modelling.Core.Elements;
+using Nictoarch.Modelling.Core.Yaml;
 using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.BufferedDeserialization;
 
 namespace Nictoarch.Modelling.Json
 {
-    public sealed class JsonModelProviderFactory : IModelProviderFactory<ProviderConfig, QuerySelector, QuerySelector>
+    public sealed class JsonModelProviderFactory : IModelProviderFactory<ProviderConfig>
     {
         string IModelProviderFactory.Name => "json";
 
-        void IModelProviderFactory.ConfigureYamlDeserialzier(DeserializerBuilder builder)
+        public void AddYamlTypeDiscriminators(ITypeDiscriminatingNodeDeserializerOptions opts)
         {
             //see https://github.com/aaubry/YamlDotNet/wiki/Deserialization---Type-Discriminators#determining-type-based-on-the-value-of-a-key
-            builder.WithTypeDiscriminatingNodeDeserializer( (options) => {
-                options.AddKeyValueTypeDiscriminator<ProviderConfig.Auth>(
-                    discriminatorKey: nameof(ProviderConfig.Auth.type), 
-                    valueTypeMapping: new Dictionary<string, Type> {
+            opts.AddTypeDiscriminator(
+                new StrictKeyValueTypeDiscriminator(
+                    baseType: typeof(ProviderConfig.Auth),
+                    targetKey: nameof(ProviderConfig.Auth.type),
+                    typeMapping: new Dictionary<string, Type> {
                         { ProviderConfig.NoneAuth.TYPE, typeof(ProviderConfig.NoneAuth) },
                         { ProviderConfig.BasicAuth.TYPE, typeof(ProviderConfig.BasicAuth) },
                     }
-                );
-            });
+                )
+            );
         }
 
+        /*
         async Task<IModelProvider> IModelProviderFactory<ProviderConfig, QuerySelector, QuerySelector>.GetProviderAsync(ProviderConfig config, CancellationToken cancellationToken)
         {
             JToken json;
@@ -94,6 +99,7 @@ namespace Nictoarch.Modelling.Json
                 return Task.FromResult(result);
             }
         }
+        */
 
         private async Task<JToken> TransformXml2Json(Stream sourceStream, CancellationToken cancellationToken)
         {

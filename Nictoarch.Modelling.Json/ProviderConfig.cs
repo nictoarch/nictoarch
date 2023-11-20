@@ -13,7 +13,7 @@ using YamlDotNet.Core.Events;
 
 namespace Nictoarch.Modelling.Json
 {
-    public sealed class ProviderConfig
+    public sealed class ProviderConfig: ModelSpecImpl.SourceBase
     {
         public enum ESourceTransform
         {
@@ -54,8 +54,8 @@ namespace Nictoarch.Modelling.Json
             }
         }
 
-        [Required] public string source { get; set; } = default!;
-        [Required] public ESourceTransform source_transform { get; set; } = ESourceTransform.none;
+        [Required] public string location { get; set; } = default!;
         public Auth? auth { get; set; }
+        [Required] public ESourceTransform source_transform { get; set; } = ESourceTransform.none;
     }
 }

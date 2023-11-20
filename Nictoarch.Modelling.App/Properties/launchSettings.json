@@ -10,6 +10,10 @@
         "json xml": {
             "commandName": "Project",
             "commandLineArgs": "json xml ../../../../Nictoarch.Common.Xml2Json.Tests/data/drawio.small.xml -o ./drawio.small.xml.json"
+        },
+        "sample spec": {
+            "commandName": "Project",
+            "commandLineArgs": "e ../../../../Nictoarch.Modelling.Core/model_spec_sample.yaml -o ./model_spec_sample.yaml.json"
         }
     }
 }

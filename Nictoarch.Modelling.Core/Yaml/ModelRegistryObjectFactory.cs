@@ -9,6 +9,7 @@ using YamlDotNet.Serialization.ObjectFactories;
 
 namespace Nictoarch.Modelling.Core.Yaml
 {
+    /*
     public sealed class ModelRegistryObjectFactory : IObjectFactory
     {
         private readonly IObjectFactory m_fallback;
@@ -47,4 +48,5 @@ namespace Nictoarch.Modelling.Core.Yaml
             return m_fallback.GetValueType(type);
         }
     }
+    */
 }

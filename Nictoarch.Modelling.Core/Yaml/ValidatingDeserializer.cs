@@ -11,14 +11,15 @@ using YamlDotNet.Serialization.NodeDeserializers;
 
 namespace Nictoarch.Modelling.Core.Yaml
 {
-    //see https://github.com/aaubry/YamlDotNet/issues/202#issuecomment-830712803
+    // see https://github.com/aaubry/YamlDotNet/issues/202#issuecomment-830712803
+    // see https://github.com/aaubry/YamlDotNet/wiki/Serialization.Deserializer#withnodedeserializer
     public sealed class ValidatingDeserializer : INodeDeserializer
     {
         private readonly INodeDeserializer m_nodeDeserializer;
 
-        public ValidatingDeserializer(INodeDeserializer nodeDeserializer)
+        public ValidatingDeserializer(INodeDeserializer internalDeserialzier)
         {
-            this.m_nodeDeserializer = nodeDeserializer;
+            this.m_nodeDeserializer = internalDeserialzier;
         }
 
         public bool Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value)

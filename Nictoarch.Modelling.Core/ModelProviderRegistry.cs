@@ -8,8 +8,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Nictoarch.Modelling.Core.Elements;
+using Nictoarch.Modelling.Core.Yaml;
 using NLog;
 using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.BufferedDeserialization;
 
 namespace Nictoarch.Modelling.Core
 {
@@ -52,7 +54,7 @@ namespace Nictoarch.Modelling.Core
             AssemblyName assemblyName = new AssemblyName(pluginAssembly.FullName!);
             this.m_logger.Trace($"Loading providers from {assemblyName.Name} v{assemblyName.Version}");
 
-            Type openFactoryType = typeof(IModelProviderFactory<,,>);
+            Type openFactoryType = typeof(IModelProviderFactory<>);
 
             foreach (Type factoryClassType in pluginAssembly.GetExportedTypes().Where(t => t.IsClass && !t.IsAbstract))
             {
@@ -62,9 +64,7 @@ namespace Nictoarch.Modelling.Core
                     {
                         Type[] args = interfaceType.GetGenericArguments();
                         Type configType = args[0];
-                        Type entityConfigType = args[1];
-                        Type validationConfigType = args[2];
-                        ModelProviderFactory factory = new ModelProviderFactory(factoryClassType, configType, entityConfigType, validationConfigType);
+                        ModelProviderFactory factory = new ModelProviderFactory(factoryClassType, configType);
                         this.m_providerFactories.Add(factory.Name, factory);
                         this.m_logger.Trace($"Added provider '{factory.Name}' from {factoryClassType.Name}");
                     }
@@ -74,10 +74,35 @@ namespace Nictoarch.Modelling.Core
 
         internal void ConfigureYamlDeserialzier(DeserializerBuilder builder)
         {
-            foreach (ModelProviderFactory factory in this.m_providerFactories.Values)
-            {
-                factory.ConfigureYamlDeserialzier(builder);
-            }
+            //see https://github.com/aaubry/YamlDotNet/wiki/Deserialization---Type-Discriminators#determining-type-based-on-the-value-of-a-key
+            builder.WithTypeDiscriminatingNodeDeserializer(options => {
+
+                //mapping for data.source.type field
+                {
+                    Dictionary<string, Type> sourceTypeMapping = this.m_providerFactories.Values.ToDictionary(f => f.Name, f => f.ConfigType);
+
+                    /*
+                    options.AddKeyValueTypeDiscriminator<ModelSpecImpl.SourceBase>(
+                        discriminatorKey: nameof(ModelSpecImpl.SourceBase.type),
+                        valueTypeMapping: sourceTypeMapping
+                    );
+                    */
+                    options.AddTypeDiscriminator(
+                        new StrictKeyValueTypeDiscriminator(
+                            baseType: typeof(ModelSpecImpl.SourceBase),
+                            targetKey: nameof(ModelSpecImpl.SourceBase.type),
+                            typeMapping: sourceTypeMapping
+                        )
+                    );
+                }
+
+                // allow providers to register descriminators too
+                foreach (ModelProviderFactory factory in this.m_providerFactories.Values)
+                {
+                    factory.AddYamlTypeDiscriminators(options);
+                }
+            });
+
         }
 
         internal bool GetProviderFactory(string name, [NotNullWhen(true)] out ModelProviderFactory? factory)
@@ -88,23 +113,22 @@ namespace Nictoarch.Modelling.Core
         internal sealed class ModelProviderFactory
         {
             private readonly IModelProviderFactory m_factoryInstance;
+            /*
             private readonly MethodInfo m_getProviderMethod;
             private readonly MethodInfo m_getEntitesMethod;
             private readonly MethodInfo m_getInvalidObjectsMethod;
+            */
 
             internal string Name => this.m_factoryInstance.Name;
             internal Type ConfigType { get; }
-            internal Type EntityConfigType { get; }
-            internal Type ValidationConfigType { get; }
 
-            internal ModelProviderFactory(Type providerType, Type configType, Type entityConfigType, Type validationConfigType)
+            internal ModelProviderFactory(Type providerType, Type configType)
             {
                 this.ConfigType = configType;
-                this.EntityConfigType = entityConfigType;
-                this.ValidationConfigType = validationConfigType;
 
                 this.m_factoryInstance = (IModelProviderFactory)Activator.CreateInstance(providerType)!;
 
+                /*
                 this.m_getProviderMethod = typeof(IModelProviderFactory<,,>)
                     .MakeGenericType(this.ConfigType, this.EntityConfigType, this.ValidationConfigType)
                     .GetMethod(nameof(IModelProviderFactory<object, object, object>.GetProviderAsync))!;
@@ -114,13 +138,15 @@ namespace Nictoarch.Modelling.Core
                 this.m_getInvalidObjectsMethod = typeof(IModelProvider<,>)
                     .MakeGenericType(this.EntityConfigType, this.ValidationConfigType)
                     .GetMethod(nameof(IModelProvider<object, object>.GetInvalidObjectsAsync))!;
+                */
             }
 
-            internal void ConfigureYamlDeserialzier(DeserializerBuilder builder)
+            internal void AddYamlTypeDiscriminators(ITypeDiscriminatingNodeDeserializerOptions opts)
             {
-                this.m_factoryInstance.ConfigureYamlDeserialzier(builder);
+                this.m_factoryInstance.AddYamlTypeDiscriminators(opts);
             }
 
+            /*
             internal Task<IModelProvider> GetProviderAsync(object config, CancellationToken cancellationToken)
             {
                 if (!this.ConfigType.IsAssignableFrom(config.GetType())) 
@@ -150,6 +176,7 @@ namespace Nictoarch.Modelling.Core
 
                 return (Task<List<object>>)this.m_getInvalidObjectsMethod.Invoke(provider, new object[] { config, cancellationToken })!;
             }
+            */
         }
     }
 }
