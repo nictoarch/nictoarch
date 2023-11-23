@@ -24,8 +24,7 @@ namespace Nictoarch.Modelling.Json
         public void AddYamlTypeDiscriminators(ITypeDiscriminatingNodeDeserializerOptions opts)
         {
             //see https://github.com/aaubry/YamlDotNet/wiki/Deserialization---Type-Discriminators#determining-type-based-on-the-value-of-a-key
-            opts.AddTypeDiscriminator(
-                new StrictKeyValueTypeDiscriminator(
+            opts.AddTypeDiscriminator(new StrictKeyValueTypeDiscriminator(
                     baseType: typeof(ProviderConfig.Auth),
                     targetKey: nameof(ProviderConfig.Auth.type),
                     typeMapping: new Dictionary<string, Type> {

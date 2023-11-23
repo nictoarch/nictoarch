@@ -13,8 +13,8 @@ namespace Nictoarch.Modelling.Core.Yaml
     public sealed class StrictKeyValueTypeDiscriminator : ITypeDiscriminator
     {
         public Type BaseType { get; private set; }
-        private readonly string targetKey;
-        private readonly IDictionary<string, Type> typeMapping;
+        private readonly string m_targetKey;
+        private readonly IDictionary<string, Type> m_typeMapping;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyValueTypeDiscriminator"/> class.
@@ -36,8 +36,8 @@ namespace Nictoarch.Modelling.Core.Yaml
                 }
             }
             this.BaseType = baseType;
-            this.targetKey = targetKey;
-            this.typeMapping = typeMapping;
+            this.m_targetKey = targetKey;
+            this.m_typeMapping = typeMapping;
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace Nictoarch.Modelling.Core.Yaml
             string? foundScalarValue = null;
 
             if (parser.TryFindMappingEntry(
-                    scalar => targetKey == scalar.Value,
+                    scalar => this.m_targetKey == scalar.Value,
                     out Scalar? key,
                     out ParsingEvent? value)
             )
@@ -66,7 +66,7 @@ namespace Nictoarch.Modelling.Core.Yaml
                 {
                     foundScalarValue = valueScalar.Value;
 
-                    if (typeMapping.TryGetValue(valueScalar.Value, out Type? childType))
+                    if (this.m_typeMapping.TryGetValue(valueScalar.Value, out Type? childType))
                     {
                         suggestedType = childType;
                         return true;
@@ -77,11 +77,11 @@ namespace Nictoarch.Modelling.Core.Yaml
             // we could not find our key, thus we could not determine correct child type
             if (foundScalarValue != null)
             {
-                throw new YamlException(parser.Current!.Start, parser.Current!.End, $"No proper child type found for {this.BaseType.Name}.{this.targetKey} value '{foundScalarValue}'. Known values are: {String.Join(", ", this.typeMapping.Keys.OrderBy(k => k))}");
+                throw new YamlException(parser.Current!.Start, parser.Current!.End, $"No proper child type found for {this.BaseType.Name}.{this.m_targetKey} value '{foundScalarValue}'. Known values are: {String.Join(", ", this.m_typeMapping.Keys.OrderBy(k => k))}");
             }
             else
             {
-                throw new YamlException(parser.Current!.Start, parser.Current!.End, $"No proper child type found for {this.BaseType.Name}.{this.targetKey} because it is not specified");
+                throw new YamlException(parser.Current!.Start, parser.Current!.End, $"No proper child type found for {this.BaseType.Name}.{this.m_targetKey} because it is not specified");
             }
         }
     }

@@ -45,7 +45,7 @@ namespace Nictoarch.Modelling.Core.Yaml
                     throw;
                 }
 
-                throw new YamlException(currentEvent.Start, currentEvent.End, e.Message);
+                throw new YamlException(currentEvent.Start, currentEvent.End, e.Message, e);
             }
 
             //see https://github.com/aaubry/YamlDotNet/issues/785

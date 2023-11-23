@@ -42,6 +42,11 @@ namespace Nictoarch.Modelling.Core.Yaml
         public abstract class EntitiesSelectorBase
         {
             public abstract List<Entity> GetEntities(JToken extractedData);
+
+            public static EntitiesSelectorBase Parse(string v)
+            {
+                return new EntitiesSelectorSingleQuery(new JsonataQuery(v));
+            }
         }
 
         public sealed class EntitiesSelectorSingleQuery: EntitiesSelectorBase

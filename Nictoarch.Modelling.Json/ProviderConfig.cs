@@ -10,6 +10,7 @@ using Jsonata.Net.Native;
 using Nictoarch.Modelling.Core.Yaml;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
+using YamlDotNet.Serialization;
 
 namespace Nictoarch.Modelling.Json
 {
@@ -26,6 +27,19 @@ namespace Nictoarch.Modelling.Json
             [Required] public string type { get; set; } = default!;
 
             internal abstract AuthenticationHeaderValue? CreateHeader();
+
+            //used for short form "auth: none"
+            public static Auth Parse(string v)
+            {
+                if (v == NoneAuth.TYPE)
+                {
+                    return new NoneAuth();
+                }
+                else
+                {
+                    throw new ArgumentException("Unexpected value " + v);
+                }
+            }
         }
 
         public sealed class NoneAuth : Auth
@@ -56,6 +70,6 @@ namespace Nictoarch.Modelling.Json
 
         [Required] public string location { get; set; } = default!;
         public Auth? auth { get; set; }
-        [Required] public ESourceTransform source_transform { get; set; } = ESourceTransform.none;
+        [Required] public ESourceTransform transform { get; set; } = ESourceTransform.none;
     }
 }
