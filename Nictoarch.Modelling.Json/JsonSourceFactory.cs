@@ -17,19 +17,19 @@ using YamlDotNet.Serialization.BufferedDeserialization;
 
 namespace Nictoarch.Modelling.Json
 {
-    public sealed class JsonModelProviderFactory : IModelProviderFactory<ProviderConfig>
+    public sealed class JsonSourceFactory : ISourceFactory<SourceConfig>
     {
-        string IModelProviderFactory.Name => "json";
+        string ISourceFactory.Name => "json";
 
         public void AddYamlTypeDiscriminators(ITypeDiscriminatingNodeDeserializerOptions opts)
         {
             //see https://github.com/aaubry/YamlDotNet/wiki/Deserialization---Type-Discriminators#determining-type-based-on-the-value-of-a-key
             opts.AddTypeDiscriminator(new StrictKeyValueTypeDiscriminator(
-                    baseType: typeof(ProviderConfig.Auth),
-                    targetKey: nameof(ProviderConfig.Auth.type),
+                    baseType: typeof(SourceConfig.Auth),
+                    targetKey: nameof(SourceConfig.Auth.type),
                     typeMapping: new Dictionary<string, Type> {
-                        { ProviderConfig.NoneAuth.TYPE, typeof(ProviderConfig.NoneAuth) },
-                        { ProviderConfig.BasicAuth.TYPE, typeof(ProviderConfig.BasicAuth) },
+                        { SourceConfig.NoneAuth.TYPE, typeof(SourceConfig.NoneAuth) },
+                        { SourceConfig.BasicAuth.TYPE, typeof(SourceConfig.BasicAuth) },
                     }
                 )
             );

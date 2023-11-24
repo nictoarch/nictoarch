@@ -14,7 +14,7 @@ namespace Nictoarch.Modelling.App
     internal class Program
     {
         private static readonly Logger s_logger = LogManager.GetCurrentClassLogger();
-        private static readonly ModelProviderRegistry s_registry = new ModelProviderRegistry();
+        private static readonly SourceRegistry s_registry = new SourceRegistry();
 
         static Task Main(string[] args)
         {

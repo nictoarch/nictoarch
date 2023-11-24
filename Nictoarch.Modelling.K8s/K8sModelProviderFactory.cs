@@ -14,16 +14,16 @@ using YamlDotNet.Serialization;
 
 namespace Nictoarch.Modelling.K8s
 {
-    public sealed class K8sModelProviderFactory : IModelProviderFactory<ProviderConfig, EntitySelector, ValidationSelector>
+    public sealed class K8sModelProviderFactory : ISourceFactory<ProviderConfig, EntitySelector, ValidationSelector>
     {
-        string IModelProviderFactory.Name => "k8s";
+        string ISourceFactory.Name => "k8s";
 
-        void IModelProviderFactory.ConfigureYamlDeserialzier(DeserializerBuilder builder)
+        void ISourceFactory.ConfigureYamlDeserialzier(DeserializerBuilder builder)
         {
             //nothing to do
         }
 
-        Task<IModelProvider> IModelProviderFactory<ProviderConfig, EntitySelector, ValidationSelector>.GetProviderAsync(ProviderConfig config, CancellationToken cancellationToken)
+        Task<IModelProvider> ISourceFactory<ProviderConfig, EntitySelector, ValidationSelector>.GetProviderAsync(ProviderConfig config, CancellationToken cancellationToken)
         {
             KubernetesClientConfiguration k8sConfig = config.GetK8sConfiguration();
             List<Entity> results = new List<Entity>();

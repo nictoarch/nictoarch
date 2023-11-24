@@ -12,14 +12,14 @@ using YamlDotNet.Serialization.BufferedDeserialization;
 
 namespace Nictoarch.Modelling.Core
 {
-    public interface IModelProviderFactory
+    public interface ISourceFactory
     {
         string Name { get; }
         void AddYamlTypeDiscriminators(ITypeDiscriminatingNodeDeserializerOptions opts);
     }
 
-    public interface IModelProviderFactory<TConfig> : IModelProviderFactory
-        where TConfig : ModelSpecImpl.SourceBase
+    public interface ISourceFactory<TConfig> : ISourceFactory
+        where TConfig : ModelSpec.SourceConfigBase
     {
         //Task<IModelProvider> GetProviderAsync(TConfig config, CancellationToken cancellationToken);
     }

@@ -10,12 +10,12 @@ using YamlDotNet.Serialization.ObjectFactories;
 namespace Nictoarch.Modelling.Core.Yaml
 {
     /*
-    public sealed class ModelRegistryObjectFactory : IObjectFactory
+    public sealed class SourceRegistryObjectFactory : IObjectFactory
     {
         private readonly IObjectFactory m_fallback;
         private readonly ModelProviderRegistry m_registry;
 
-        public ModelRegistryObjectFactory(ModelProviderRegistry registry)
+        public SourceRegistryObjectFactory(SourceRegistry registry)
         {
             m_fallback = new DefaultObjectFactory();
             m_registry = registry;

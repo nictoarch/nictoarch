@@ -11,6 +11,7 @@ data:
       transform: xml2json # optional
     elements:
       # it is possible to not have an `extract` field in case source is already a json
+      - extract: all # extract element is provider-specific
       - entities: |
           **[_type='object' and `service-name`].{
                 'type': 'service',

@@ -15,14 +15,14 @@ using YamlDotNet.Serialization.BufferedDeserialization;
 
 namespace Nictoarch.Modelling.Core
 {
-    public sealed class ModelProviderRegistry
+    public sealed class SourceRegistry
     {
         private readonly Logger m_logger = LogManager.GetCurrentClassLogger();
-        private readonly Dictionary<string, ModelProviderFactory> m_providerFactories = new Dictionary<string, ModelProviderFactory>();
+        private readonly Dictionary<string, SourceFactoryWrapper> m_factoryWrappers = new Dictionary<string, SourceFactoryWrapper>();
 
-        public IEnumerable<string> ProviderNames => this.m_providerFactories.Keys;
+        public IEnumerable<string> ProviderNames => this.m_factoryWrappers.Keys;
 
-        public ModelProviderRegistry()
+        public SourceRegistry()
         {
             this.LoadProviders();
         }
@@ -54,7 +54,7 @@ namespace Nictoarch.Modelling.Core
             AssemblyName assemblyName = new AssemblyName(pluginAssembly.FullName!);
             this.m_logger.Trace($"Loading providers from {assemblyName.Name} v{assemblyName.Version}");
 
-            Type openFactoryType = typeof(IModelProviderFactory<>);
+            Type openFactoryType = typeof(ISourceFactory<>);
 
             foreach (Type factoryClassType in pluginAssembly.GetExportedTypes().Where(t => t.IsClass && !t.IsAbstract))
             {
@@ -64,9 +64,9 @@ namespace Nictoarch.Modelling.Core
                     {
                         Type[] args = interfaceType.GetGenericArguments();
                         Type configType = args[0];
-                        ModelProviderFactory factory = new ModelProviderFactory(factoryClassType, configType);
-                        this.m_providerFactories.Add(factory.Name, factory);
-                        this.m_logger.Trace($"Added provider '{factory.Name}' from {factoryClassType.Name}");
+                        SourceFactoryWrapper wrapper = new SourceFactoryWrapper(factoryClassType, configType);
+                        this.m_factoryWrappers.Add(wrapper.Name, wrapper);
+                        this.m_logger.Trace($"Added sourcce factory '{wrapper.Name}' from {factoryClassType.Name}");
                     }
                 }
             }
@@ -79,7 +79,7 @@ namespace Nictoarch.Modelling.Core
 
                 //mapping for data.source.type field
                 {
-                    Dictionary<string, Type> sourceTypeMapping = this.m_providerFactories.Values.ToDictionary(f => f.Name, f => f.ConfigType);
+                    Dictionary<string, Type> sourceTypeMapping = this.m_factoryWrappers.Values.ToDictionary(f => f.Name, f => f.ConfigType);
 
                     /*
                     options.AddKeyValueTypeDiscriminator<ModelSpecImpl.SourceBase>(
@@ -89,15 +89,15 @@ namespace Nictoarch.Modelling.Core
                     */
                     options.AddTypeDiscriminator(
                         new StrictKeyValueTypeDiscriminator(
-                            baseType: typeof(ModelSpecImpl.SourceBase),
-                            targetKey: nameof(ModelSpecImpl.SourceBase.type),
+                            baseType: typeof(ModelSpec.SourceConfigBase),
+                            targetKey: nameof(ModelSpec.SourceConfigBase.type),
                             typeMapping: sourceTypeMapping
                         )
                     );
                 }
 
                 // allow providers to register descriminators too
-                foreach (ModelProviderFactory factory in this.m_providerFactories.Values)
+                foreach (SourceFactoryWrapper factory in this.m_factoryWrappers.Values)
                 {
                     factory.AddYamlTypeDiscriminators(options);
                 }
@@ -105,14 +105,14 @@ namespace Nictoarch.Modelling.Core
 
         }
 
-        internal bool GetProviderFactory(string name, [NotNullWhen(true)] out ModelProviderFactory? factory)
+        internal bool GetProviderFactory(string name, [NotNullWhen(true)] out SourceFactoryWrapper? factory)
         {
-            return this.m_providerFactories.TryGetValue(name, out factory);
+            return this.m_factoryWrappers.TryGetValue(name, out factory);
         }
 
-        internal sealed class ModelProviderFactory
+        internal sealed class SourceFactoryWrapper
         {
-            private readonly IModelProviderFactory m_factoryInstance;
+            private readonly ISourceFactory m_factoryInstance;
             /*
             private readonly MethodInfo m_getProviderMethod;
             private readonly MethodInfo m_getEntitesMethod;
@@ -122,11 +122,11 @@ namespace Nictoarch.Modelling.Core
             internal string Name => this.m_factoryInstance.Name;
             internal Type ConfigType { get; }
 
-            internal ModelProviderFactory(Type providerType, Type configType)
+            internal SourceFactoryWrapper(Type providerType, Type configType)
             {
                 this.ConfigType = configType;
 
-                this.m_factoryInstance = (IModelProviderFactory)Activator.CreateInstance(providerType)!;
+                this.m_factoryInstance = (ISourceFactory)Activator.CreateInstance(providerType)!;
 
                 /*
                 this.m_getProviderMethod = typeof(IModelProviderFactory<,,>)
