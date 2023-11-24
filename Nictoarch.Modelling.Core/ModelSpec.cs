@@ -12,6 +12,7 @@ using Nictoarch.Modelling.Core.Elements;
 using Nictoarch.Modelling.Core.Yaml;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NodeDeserializers;
+using YamlDotNet.Serialization.BufferedDeserialization.TypeDiscriminators;
 
 namespace Nictoarch.Modelling.Core
 {
@@ -36,8 +37,10 @@ namespace Nictoarch.Modelling.Core
 
         public static ModelSpec Load(TextReader reader, SourceRegistry registry)
         {
+            ModelSpecObjectFactory modelSpecObjectFactory = new ModelSpecObjectFactory(registry);
+
             DeserializerBuilder builder = new DeserializerBuilder()
-                //.WithObjectFactory(new ModelRegistryObjectFactory(registry))
+                .WithObjectFactory(modelSpecObjectFactory)
 
                 //see https://github.com/aaubry/YamlDotNet/wiki/Serialization.Deserializer#withnodedeserializer
                 .WithNodeDeserializer(
@@ -45,9 +48,17 @@ namespace Nictoarch.Modelling.Core
                     where: syntax => syntax.InsteadOf<ObjectNodeDeserializer>()
                 )
                 .WithTypeConverter(new JsonataQueryYamlConverter())
-                ;
 
-            registry.ConfigureYamlDeserialzier(builder);
+                //see https://github.com/aaubry/YamlDotNet/wiki/Deserialization---Type-Discriminators#determining-type-based-on-the-value-of-a-key
+                .WithTypeDiscriminatingNodeDeserializer(options => {
+                    
+                    options.AddTypeDiscriminator(modelSpecObjectFactory.Discriminator);
+
+                    foreach (ITypeDiscriminator discriminator in registry.GetYamlTypeDiscriminators())
+                    {
+                        options.AddTypeDiscriminator(discriminator);
+                    }
+                });
 
             IDeserializer deserializer = builder.Build();
 
@@ -104,10 +115,15 @@ namespace Nictoarch.Modelling.Core
 
         public sealed class Element
         {
-            [Required] public object extract { get; set; } = default!;
+            [Required] public ExtractConfigBase extract { get; set; } = default!;
             public JsonataQuery? filter { get; set; }
             public EntitiesSelectorBase? entities { get; set; }
             public JsonataQuery? invalid { get; set; }
+        }
+
+        public abstract class ExtractConfigBase
+        {
+
         }
 
         public abstract class EntitiesSelectorBase

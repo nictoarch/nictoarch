@@ -8,18 +8,18 @@ data:
       #   type: basic
       #   user: user
       #   pass: pass
-      transform: xml2json # optional
     elements:
       # it is possible to not have an `extract` field in case source is already a json
-      - extract: all # extract element is provider-specific
-      - entities: |
+      - extract: # extract element is provider-specific
+          transform: xml2json # optional
+        entities: |
           **[_type='object' and `service-name`].{
                 'type': 'service',
                 'domain_id': `id`,
                 'semantic_id': `service-name` & '@' & `service-group`,
                 'display_name': `service-name` & '@' & `service-group`
           }[]
-      - invalid: |
+        invalid: |
           **[_type='root']
                 ._nested[
                    _type='mxCell'

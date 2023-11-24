@@ -14,24 +14,25 @@ using Nictoarch.Modelling.Core.Elements;
 using Nictoarch.Modelling.Core.Yaml;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.BufferedDeserialization;
+using YamlDotNet.Serialization.BufferedDeserialization.TypeDiscriminators;
 
 namespace Nictoarch.Modelling.Json
 {
-    public sealed class JsonSourceFactory : ISourceFactory<SourceConfig>
+    public sealed class JsonSourceFactory : ISourceFactory<JsonSourceConfig, JsonExtractConfig>
     {
         string ISourceFactory.Name => "json";
 
-        public void AddYamlTypeDiscriminators(ITypeDiscriminatingNodeDeserializerOptions opts)
+        IEnumerable<ITypeDiscriminator> ISourceFactory.GetYamlTypeDiscriminators()
         {
             //see https://github.com/aaubry/YamlDotNet/wiki/Deserialization---Type-Discriminators#determining-type-based-on-the-value-of-a-key
-            opts.AddTypeDiscriminator(new StrictKeyValueTypeDiscriminator(
-                    baseType: typeof(SourceConfig.Auth),
-                    targetKey: nameof(SourceConfig.Auth.type),
-                    typeMapping: new Dictionary<string, Type> {
-                        { SourceConfig.NoneAuth.TYPE, typeof(SourceConfig.NoneAuth) },
-                        { SourceConfig.BasicAuth.TYPE, typeof(SourceConfig.BasicAuth) },
-                    }
-                )
+
+            yield return new StrictKeyValueTypeDiscriminator(
+                baseType: typeof(JsonSourceConfig.Auth),
+                targetKey: nameof(JsonSourceConfig.Auth.type),
+                typeMapping: new Dictionary<string, Type> {
+                    { JsonSourceConfig.NoneAuth.TYPE, typeof(JsonSourceConfig.NoneAuth) },
+                    { JsonSourceConfig.BasicAuth.TYPE, typeof(JsonSourceConfig.BasicAuth) },
+                }
             );
         }
 

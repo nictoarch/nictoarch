@@ -12,6 +12,7 @@ using Nictoarch.Modelling.Core.Yaml;
 using NLog;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.BufferedDeserialization;
+using YamlDotNet.Serialization.BufferedDeserialization.TypeDiscriminators;
 
 namespace Nictoarch.Modelling.Core
 {
@@ -54,7 +55,7 @@ namespace Nictoarch.Modelling.Core
             AssemblyName assemblyName = new AssemblyName(pluginAssembly.FullName!);
             this.m_logger.Trace($"Loading providers from {assemblyName.Name} v{assemblyName.Version}");
 
-            Type openFactoryType = typeof(ISourceFactory<>);
+            Type openFactoryType = typeof(ISourceFactory<,>);
 
             foreach (Type factoryClassType in pluginAssembly.GetExportedTypes().Where(t => t.IsClass && !t.IsAbstract))
             {
@@ -64,7 +65,8 @@ namespace Nictoarch.Modelling.Core
                     {
                         Type[] args = interfaceType.GetGenericArguments();
                         Type configType = args[0];
-                        SourceFactoryWrapper wrapper = new SourceFactoryWrapper(factoryClassType, configType);
+                        Type extractType = args[1];
+                        SourceFactoryWrapper wrapper = new SourceFactoryWrapper(factoryClassType, configType, extractType);
                         this.m_factoryWrappers.Add(wrapper.Name, wrapper);
                         this.m_logger.Trace($"Added sourcce factory '{wrapper.Name}' from {factoryClassType.Name}");
                     }
@@ -72,42 +74,32 @@ namespace Nictoarch.Modelling.Core
             }
         }
 
-        internal void ConfigureYamlDeserialzier(DeserializerBuilder builder)
+        internal IEnumerable<ITypeDiscriminator> GetYamlTypeDiscriminators()
         {
-            //see https://github.com/aaubry/YamlDotNet/wiki/Deserialization---Type-Discriminators#determining-type-based-on-the-value-of-a-key
-            builder.WithTypeDiscriminatingNodeDeserializer(options => {
 
-                //mapping for data.source.type field
-                {
-                    Dictionary<string, Type> sourceTypeMapping = this.m_factoryWrappers.Values.ToDictionary(f => f.Name, f => f.ConfigType);
+            //mapping for data.source.type field
+            Dictionary<string, Type> sourceTypeMapping = this.m_factoryWrappers.Values.ToDictionary(f => f.Name, f => f.ConfigType);
 
-                    /*
-                    options.AddKeyValueTypeDiscriminator<ModelSpecImpl.SourceBase>(
-                        discriminatorKey: nameof(ModelSpecImpl.SourceBase.type),
-                        valueTypeMapping: sourceTypeMapping
-                    );
-                    */
-                    options.AddTypeDiscriminator(
-                        new StrictKeyValueTypeDiscriminator(
-                            baseType: typeof(ModelSpec.SourceConfigBase),
-                            targetKey: nameof(ModelSpec.SourceConfigBase.type),
-                            typeMapping: sourceTypeMapping
-                        )
-                    );
-                }
+            ITypeDiscriminator configTypeDiscriminator = new StrictKeyValueTypeDiscriminator(
+                baseType: typeof(ModelSpec.SourceConfigBase),
+                targetKey: nameof(ModelSpec.SourceConfigBase.type),
+                typeMapping: sourceTypeMapping
+            );
 
-                // allow providers to register descriminators too
-                foreach (SourceFactoryWrapper factory in this.m_factoryWrappers.Values)
-                {
-                    factory.AddYamlTypeDiscriminators(options);
-                }
-            });
-
+            return this.m_factoryWrappers.Values
+                .SelectMany(w => w.GetYamlTypeDiscriminators())
+                .Append(configTypeDiscriminator);
         }
 
         internal bool GetProviderFactory(string name, [NotNullWhen(true)] out SourceFactoryWrapper? factory)
         {
             return this.m_factoryWrappers.TryGetValue(name, out factory);
+        }
+
+        internal bool GetProviderByConfigType(Type configType, [NotNullWhen(true)] out SourceFactoryWrapper? factory)
+        {
+            factory = this.m_factoryWrappers.Values.FirstOrDefault(w => w.ConfigType == configType);
+            return factory != null;
         }
 
         internal sealed class SourceFactoryWrapper
@@ -121,10 +113,12 @@ namespace Nictoarch.Modelling.Core
 
             internal string Name => this.m_factoryInstance.Name;
             internal Type ConfigType { get; }
+            internal Type ExtractType { get; }
 
-            internal SourceFactoryWrapper(Type providerType, Type configType)
+            internal SourceFactoryWrapper(Type providerType, Type configType, Type extractType)
             {
                 this.ConfigType = configType;
+                this.ExtractType = extractType;
 
                 this.m_factoryInstance = (ISourceFactory)Activator.CreateInstance(providerType)!;
 
@@ -141,9 +135,9 @@ namespace Nictoarch.Modelling.Core
                 */
             }
 
-            internal void AddYamlTypeDiscriminators(ITypeDiscriminatingNodeDeserializerOptions opts)
+            internal IEnumerable<ITypeDiscriminator> GetYamlTypeDiscriminators()
             {
-                this.m_factoryInstance.AddYamlTypeDiscriminators(opts);
+                return this.m_factoryInstance.GetYamlTypeDiscriminators();
             }
 
             /*

@@ -6,14 +6,8 @@ using Nictoarch.Modelling.Core;
 
 namespace Nictoarch.Modelling.Json
 {
-    public sealed class SourceConfig: ModelSpec.SourceConfigBase
+    public sealed class JsonSourceConfig: ModelSpec.SourceConfigBase
     {
-        public enum ESourceTransform
-        {
-            none,
-            xml2json
-        }
-
         public abstract class Auth
         {
             [Required] public string type { get; set; } = default!;
@@ -62,6 +56,5 @@ namespace Nictoarch.Modelling.Json
 
         [Required] public string location { get; set; } = default!;
         public Auth? auth { get; set; }
-        [Required] public ESourceTransform transform { get; set; } = ESourceTransform.none;
     }
 }

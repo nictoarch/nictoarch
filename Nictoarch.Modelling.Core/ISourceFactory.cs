@@ -9,17 +9,19 @@ using Nictoarch.Modelling.Core.Elements;
 using Nictoarch.Modelling.Core.Yaml;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.BufferedDeserialization;
+using YamlDotNet.Serialization.BufferedDeserialization.TypeDiscriminators;
 
 namespace Nictoarch.Modelling.Core
 {
     public interface ISourceFactory
     {
         string Name { get; }
-        void AddYamlTypeDiscriminators(ITypeDiscriminatingNodeDeserializerOptions opts);
+        IEnumerable<ITypeDiscriminator> GetYamlTypeDiscriminators();
     }
 
-    public interface ISourceFactory<TConfig> : ISourceFactory
-        where TConfig : ModelSpec.SourceConfigBase
+    public interface ISourceFactory<TSourceConfig, TExtractConfig> : ISourceFactory
+        where TSourceConfig : ModelSpec.SourceConfigBase
+        where TExtractConfig: ModelSpec.ExtractConfigBase
     {
         //Task<IModelProvider> GetProviderAsync(TConfig config, CancellationToken cancellationToken);
     }
