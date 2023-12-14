@@ -36,6 +36,11 @@ namespace Nictoarch.Modelling.Json
             );
         }
 
+        Task<JToken> ISourceFactory<JsonSourceConfig, JsonExtractConfig>.GetSourceData(JsonSourceConfig sourceConfig)
+        {
+            throw new NotImplementedException();
+        }
+
         /*
         async Task<IModelProvider> IModelProviderFactory<ProviderConfig, QuerySelector, QuerySelector>.GetProviderAsync(ProviderConfig config, CancellationToken cancellationToken)
         {

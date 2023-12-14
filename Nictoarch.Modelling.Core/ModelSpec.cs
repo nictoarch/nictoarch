@@ -18,13 +18,15 @@ namespace Nictoarch.Modelling.Core
 {
     public sealed class ModelSpec
     {
-        private ModelSpecImpl m_spec;
+        private readonly ModelSpecImpl m_spec;
+        private readonly SourceRegistry m_registry;
 
         public string Name => this.m_spec.name;
 
-        private ModelSpec(ModelSpecImpl spec)
+        private ModelSpec(ModelSpecImpl spec, SourceRegistry registry)
         {
             this.m_spec = spec;
+            this.m_registry = registry;
         }
 
         public static ModelSpec LoadFromFile(string fileName, SourceRegistry registry)
@@ -72,27 +74,72 @@ namespace Nictoarch.Modelling.Core
                 throw new Exception("Failed to deserialzie model spec file >> " + ex.JoinInnerMessages(" >> "), ex);
             }
 
-            return new ModelSpec(spec);
+            return new ModelSpec(spec, registry);
         }
 
         public async Task<Model> GetModelAsync(CancellationToken cancellationToken = default)
         {
             List<Entity> entities = new List<Entity>();
             List<Link> links = new List<Link>();
-            List<object> invalidObjects = new List<object>();
+            List<JToken> invalidObjects = new List<JToken>();
 
-            /*
-            foreach (ModelSpecImpl.ModelProviderSpec providerSpec in this.m_spec.providers)
+            foreach (ModelPart part in this.m_spec.data)
             {
-                await providerSpec.ProcessAsync(entities, links, invalidObjects, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
+
+                if (!this.m_registry.GetProviderFactory(part.source.type, out SourceRegistry.SourceFactoryWrapper? factory))
+                {
+                    throw new Exception("Should not happen");
+                }
+                await using (ISource source = await factory.GetSource(part.source, cancellationToken))
+                {
+                    foreach (Element element in part.elements)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        JToken data = await factory.Extract(source, element.extract, cancellationToken);
+                        
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        if (element.filter != null)
+                        {
+                            data = element.filter.Eval(data);
+                        }
+
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        if (element.entities != null)
+                        {
+                            List<Entity> newEntities = element.entities.GetEntities(data);
+                            entities.AddRange(newEntities);
+                        }
+
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        if (element.invalid != null)
+                        {
+                            JToken newInvalids = element.invalid.Eval(data);
+                            switch (newInvalids.Type) 
+                            {
+                            case JTokenType.Undefined:
+                            case JTokenType.Null:
+                                break;
+                            case JTokenType.Array:
+                                invalidObjects.AddRange(((JArray)newInvalids).ChildrenTokens);
+                                break;
+                            case JTokenType.Object:
+                            case JTokenType.String:
+                                invalidObjects.Add(newInvalids);
+                                break;
+                            default:
+                                throw new Exception("Unexpected token type for Invalid: " + newInvalids.Type);
+                            }
+                        }
+                    }
+                }
             }
-
+                 
             return new Model(this.m_spec.name, entities, links, invalidObjects);
-            */
-
-            await Task.CompletedTask;
-            throw new NotImplementedException("TODO");
         }
 
         #region YAML classes

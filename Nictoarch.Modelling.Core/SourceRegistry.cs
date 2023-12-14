@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Jsonata.Net.Native.Json;
 using Nictoarch.Modelling.Core.Elements;
 using Nictoarch.Modelling.Core.Yaml;
 using NLog;
@@ -105,6 +106,8 @@ namespace Nictoarch.Modelling.Core
         internal sealed class SourceFactoryWrapper
         {
             private readonly ISourceFactory m_factoryInstance;
+            private readonly MethodInfo m_getSourceMethod;
+            private readonly MethodInfo m_extractDataMethod;
             /*
             private readonly MethodInfo m_getProviderMethod;
             private readonly MethodInfo m_getEntitesMethod;
@@ -138,6 +141,24 @@ namespace Nictoarch.Modelling.Core
             internal IEnumerable<ITypeDiscriminator> GetYamlTypeDiscriminators()
             {
                 return this.m_factoryInstance.GetYamlTypeDiscriminators();
+            }
+
+            internal Task<ISource> GetSource(ModelSpec.SourceConfigBase sourceConfig)
+            {
+                if (!this.ConfigType.IsAssignableFrom(sourceConfig.GetType())) 
+                {
+                    throw new Exception($"Should not happen! Factory {this.Name} expects source config of type {this.ConfigType.Name}, but was provided with {sourceConfig.GetType().Name}");
+                }
+                return (Task<ISource>)this.m_getSourceMethod.Invoke(this.m_factoryInstance, new object[] { sourceConfig })!;
+            }
+
+            internal Task<JToken> Extract(ISource source, ModelSpec.ExtractConfigBase extractConfig)
+            {
+                if (!this.ExtractType.IsAssignableFrom(extractConfig.GetType()))
+                {
+                    throw new Exception($"Should not happen! Factory {this.Name} expects extract config of type {this.ExtractType.Name}, but was provided with {extractConfig.GetType().Name}");
+                }
+                return (Task<JToken>)this.m_extractDataMethod.Invoke(source, new object[] { extractConfig })!;
             }
 
             /*

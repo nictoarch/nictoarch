@@ -19,10 +19,23 @@ namespace Nictoarch.Modelling.Core
         IEnumerable<ITypeDiscriminator> GetYamlTypeDiscriminators();
     }
 
-    public interface ISourceFactory<TSourceConfig, TExtractConfig> : ISourceFactory
+    public interface ISource: IAsyncDisposable
+    {
+
+    }
+
+    public interface ISource<TExtractConfig>: ISource
+        where TExtractConfig : ModelSpec.ExtractConfigBase
+    {
+        Task<JToken> Extract(TExtractConfig extractConfig);
+    }
+
+    public interface ISourceFactory<TSourceConfig, TSource, TExtractConfig> : ISourceFactory
         where TSourceConfig : ModelSpec.SourceConfigBase
         where TExtractConfig: ModelSpec.ExtractConfigBase
+        where TSource: ISource<TExtractConfig>
     {
+        Task<TSource> GetSource(TSourceConfig sourceConfig);
         //Task<IModelProvider> GetProviderAsync(TConfig config, CancellationToken cancellationToken);
     }
 
