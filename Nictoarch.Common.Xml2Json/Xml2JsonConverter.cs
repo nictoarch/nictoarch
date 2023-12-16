@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Xml.Linq;
 using Jsonata.Net.Native.Json;
 
@@ -24,19 +25,21 @@ namespace Nictoarch.Common.Xml2Json
             this.m_settings = settings ?? new Settings();
         }
 
-        public JObject Convert(string xml)
+        public JObject Convert(string xml, CancellationToken? cancellationToken = null)
         {
             XDocument doc = XDocument.Parse(xml);
-            return this.Convert(doc);
+            return this.Convert(doc, cancellationToken);
         }
 
-        public JObject Convert(XDocument doc)
+        public JObject Convert(XDocument doc, CancellationToken? cancellationToken = null)
         {
-            return this.Convert(doc.Root!)!;
+            return this.Convert(doc.Root!, cancellationToken)!;
         }
 
-        public JObject Convert(XElement element)
+        public JObject Convert(XElement element, CancellationToken? cancellationToken)
         {
+            cancellationToken?.ThrowIfCancellationRequested();
+
             JObject result = new JObject();
             string name;
             if (this.m_settings.KeepNamespacesInNames)
@@ -67,7 +70,7 @@ namespace Nictoarch.Common.Xml2Json
                 JArray nested = new JArray();
                 foreach (XElement childElement in element.Elements())
                 {
-                    JObject child = this.Convert(childElement);
+                    JObject child = this.Convert(childElement, cancellationToken);
                     nested.Add(child);
                 }
                 result.Add(this.m_settings.NestedPropertyName, nested);

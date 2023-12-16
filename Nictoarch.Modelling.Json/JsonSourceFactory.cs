@@ -15,10 +15,12 @@ using Nictoarch.Modelling.Core.Yaml;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.BufferedDeserialization;
 using YamlDotNet.Serialization.BufferedDeserialization.TypeDiscriminators;
+using static Nictoarch.Modelling.Json.JsonExtractConfig;
+using static Nictoarch.Modelling.Json.JsonSourceConfig;
 
 namespace Nictoarch.Modelling.Json
 {
-    public sealed class JsonSourceFactory : ISourceFactory<JsonSourceConfig, JsonExtractConfig>
+    public sealed class JsonSourceFactory : ISourceFactory<JsonSourceConfig, JsonSource, JsonExtractConfig>
     {
         string ISourceFactory.Name => "json";
 
@@ -36,10 +38,51 @@ namespace Nictoarch.Modelling.Json
             );
         }
 
-        Task<JToken> ISourceFactory<JsonSourceConfig, JsonExtractConfig>.GetSourceData(JsonSourceConfig sourceConfig)
+        async Task<ISource> ISourceFactory<JsonSourceConfig, JsonSource, JsonExtractConfig>.GetSource(JsonSourceConfig sourceConfig, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            string sourceDataString = await this.GetSourceDataString(sourceConfig, cancellationToken);
+            return new JsonSource(sourceDataString);
         }
+
+        private async Task<string> GetSourceDataString(JsonSourceConfig sourceConfig, CancellationToken cancellationToken)
+        {
+            if (sourceConfig.location.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || sourceConfig.location.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                using (HttpClient httpClient = new HttpClient())
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, sourceConfig.location))
+                {
+                    if (sourceConfig.auth != null)
+                    {
+                        request.Headers.Authorization = sourceConfig.auth.CreateHeader();
+                    }
+                    using (HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken))
+                    {
+                        response.EnsureSuccessStatusCode();
+                        using (Stream responseStream = await response.Content.ReadAsStreamAsync(cancellationToken))
+                        {
+                            return await this.ReadStream(responseStream, cancellationToken);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                using (Stream fileStream = new FileStream(sourceConfig.location, FileMode.Open, FileAccess.Read))
+                {
+                    return await this.ReadStream(fileStream, cancellationToken);
+                }
+            }
+        }
+
+        private async Task<string> ReadStream(Stream sourceStream, CancellationToken cancellationToken)
+        {
+            using (StreamReader reader = new StreamReader(sourceStream))
+            {
+                string result = await reader.ReadToEndAsync(cancellationToken);
+                return result;
+            }
+        }
+
 
         /*
         async Task<IModelProvider> IModelProviderFactory<ProviderConfig, QuerySelector, QuerySelector>.GetProviderAsync(ProviderConfig config, CancellationToken cancellationToken)

@@ -56,7 +56,7 @@ namespace Nictoarch.Modelling.Core
             AssemblyName assemblyName = new AssemblyName(pluginAssembly.FullName!);
             this.m_logger.Trace($"Loading providers from {assemblyName.Name} v{assemblyName.Version}");
 
-            Type openFactoryType = typeof(ISourceFactory<,>);
+            Type openFactoryType = typeof(ISourceFactory<,,>);
 
             foreach (Type factoryClassType in pluginAssembly.GetExportedTypes().Where(t => t.IsClass && !t.IsAbstract))
             {
@@ -66,8 +66,9 @@ namespace Nictoarch.Modelling.Core
                     {
                         Type[] args = interfaceType.GetGenericArguments();
                         Type configType = args[0];
-                        Type extractType = args[1];
-                        SourceFactoryWrapper wrapper = new SourceFactoryWrapper(factoryClassType, configType, extractType);
+                        Type sourceType = args[1];
+                        Type extractType = args[2];
+                        SourceFactoryWrapper wrapper = new SourceFactoryWrapper(factoryClassType, configType, sourceType, extractType);
                         this.m_factoryWrappers.Add(wrapper.Name, wrapper);
                         this.m_logger.Trace($"Added sourcce factory '{wrapper.Name}' from {factoryClassType.Name}");
                     }
@@ -116,14 +117,24 @@ namespace Nictoarch.Modelling.Core
 
             internal string Name => this.m_factoryInstance.Name;
             internal Type ConfigType { get; }
+            internal Type SourceType { get; }
             internal Type ExtractType { get; }
 
-            internal SourceFactoryWrapper(Type providerType, Type configType, Type extractType)
+            internal SourceFactoryWrapper(Type providerType, Type configType, Type sourceType, Type extractType)
             {
                 this.ConfigType = configType;
+                this.SourceType = sourceType;
                 this.ExtractType = extractType;
 
                 this.m_factoryInstance = (ISourceFactory)Activator.CreateInstance(providerType)!;
+
+                this.m_getSourceMethod = typeof(ISourceFactory<,,>)
+                    .MakeGenericType(this.ConfigType, this.SourceType, this.ExtractType)
+                    .GetMethod(nameof(ISourceFactory<ModelSpec.SourceConfigBase, ISource<ModelSpec.ExtractConfigBase>, ModelSpec.ExtractConfigBase>.GetSource))!;
+
+                this.m_extractDataMethod = typeof(ISource<>)
+                    .MakeGenericType(this.ExtractType)
+                    .GetMethod(nameof(ISource<ModelSpec.ExtractConfigBase>.Extract))!;
 
                 /*
                 this.m_getProviderMethod = typeof(IModelProviderFactory<,,>)
@@ -143,22 +154,23 @@ namespace Nictoarch.Modelling.Core
                 return this.m_factoryInstance.GetYamlTypeDiscriminators();
             }
 
-            internal Task<ISource> GetSource(ModelSpec.SourceConfigBase sourceConfig)
+            internal Task<ISource> GetSource(ModelSpec.SourceConfigBase sourceConfig, CancellationToken cancellationToken)
             {
                 if (!this.ConfigType.IsAssignableFrom(sourceConfig.GetType())) 
                 {
                     throw new Exception($"Should not happen! Factory {this.Name} expects source config of type {this.ConfigType.Name}, but was provided with {sourceConfig.GetType().Name}");
                 }
-                return (Task<ISource>)this.m_getSourceMethod.Invoke(this.m_factoryInstance, new object[] { sourceConfig })!;
+                object result = this.m_getSourceMethod.Invoke(this.m_factoryInstance, new object[] { sourceConfig, cancellationToken })!;
+                return (Task<ISource>)result;
             }
 
-            internal Task<JToken> Extract(ISource source, ModelSpec.ExtractConfigBase extractConfig)
+            internal Task<JToken> Extract(ISource source, ModelSpec.ExtractConfigBase extractConfig, CancellationToken cancellationToken)
             {
                 if (!this.ExtractType.IsAssignableFrom(extractConfig.GetType()))
                 {
                     throw new Exception($"Should not happen! Factory {this.Name} expects extract config of type {this.ExtractType.Name}, but was provided with {extractConfig.GetType().Name}");
                 }
-                return (Task<JToken>)this.m_extractDataMethod.Invoke(source, new object[] { extractConfig })!;
+                return (Task<JToken>)this.m_extractDataMethod.Invoke(source, new object[] { extractConfig, cancellationToken })!;
             }
 
             /*

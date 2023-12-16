@@ -194,8 +194,37 @@ namespace Nictoarch.Modelling.Core
 
             public override List<Entity> GetEntities(JToken extractedData)
             {
-                this.m_query.Eval(extractedData);
-                throw new NotImplementedException("Todo");
+                JToken queryResult = this.m_query.Eval(extractedData);
+                List<Entity> result = new List<Entity>();
+                switch (queryResult.Type)
+                {
+                case JTokenType.Undefined:
+                    break;
+                case JTokenType.Object:
+                    result.Add(this.ToEntity(queryResult));
+                    break;
+                case JTokenType.Array:
+                    foreach (JToken child in ((JArray)queryResult).ChildrenTokens)
+                    {
+                        result.Add(this.ToEntity(child));
+                    }
+                    break;
+                default:
+                    throw new Exception("Entity query should result in a single object or object array, but it returned " + queryResult.Type);
+                }
+                return result;
+            }
+
+            private Entity ToEntity(JToken token)
+            {
+                if (token.Type != JTokenType.Object)
+                {
+                    throw new Exception($"Attemptiong to convert a JSON {token.Type} to Entity. Should be a JSON Object");
+                }
+                JObject obj = (JObject)token;
+                Entity entity = obj.ToObject<Entity>();
+                entity.Validate();
+                return entity;
             }
         }
 
