@@ -27,38 +27,42 @@ data:
                    and id != '1'
                    and edge != '1'
           ]
-#  - source: #source type is provider-specific
-#      type: k8s
-#      connect_via: config_file    # to use a default .kube/config
-#      # may also be specified explicitly
-#      # connect_via:
-#      #   config_file: "c:/Users/user/.kube/config.abc"
-#    elements:
-#      - extract: # extract element is provider-specific
-#          api_group: "deployment"
-#          resource_kind: service
-#          namespace: default
-#        # filter is optional, applied before transform
-#        filter: |
-#          $not($contains(metadata.name, "-exclude-"))
-#          and metadata.name != "something-weird"
-#        # element should contain either 'entities' (, 'links') or 'invalid' section
-#        entities: # entities - may specify explicitly how to get each part of entity
-#          type: "'statefulset'"
-#          semantic_id: "metadata.name"
-#          domain_id: "metadata.namespace & ':' & metadata.name"
-#          display_name: "metadata.labels.appname & ' v' & metadata.labels.`app.kubernetes.io/version`"
-#      - extract: 
-#          resource_kind: statefulset
-#          namespace: cpl-services
-#        # entities - or just provide a single query to get everything
-#        entities: |
-#          {
-#            type: "statefulset",
-#            semantic_id: metadata.name,
-#            domain_id: metadata.uid,
-#            display_name: metadata.name
-#          }
+  - source: #source type is provider-specific
+      type: k8s
+      #####  may specify config file:
+      # config_file: "c:/Users/user/.kube/config.abc"
+      #      if unspecified, will use ~/.kube/config
+      #
+      ##### also possible to specify timeout
+      # connect_timeout_seconds: 1.5
+    elements:
+      - extract: # extract element is provider-specific
+          api_group: "deployment"
+          resource_kind: service
+          namespace: default
+          ## also possible to specify a label_query to filter objects at k8s server side:
+          # label_query: ""
+        # filter is optional, applied before transform
+        filter: |
+          $not($contains(metadata.name, "-exclude-"))
+          and metadata.name != "something-weird"
+        # element should contain either 'entities' (, 'links') or 'invalid' section
+        entities: # entities - may specify explicitly how to get each part of entity
+          type: "'service'"
+          semantic_id: "metadata.name"
+          domain_id: "metadata.namespace & ':' & metadata.name"
+          display_name: "metadata.labels.appname & ' v' & metadata.labels.`app.kubernetes.io/version`"
+      - extract: 
+          resource_kind: statefulset
+          namespace: cpl-services
+        # entities - or just provide a single query to get everything
+        entities: |
+          {
+            type: "statefulset",
+            semantic_id: metadata.name,
+            domain_id: metadata.uid,
+            display_name: metadata.name
+          }
 #  - source:
 #      type: db
 #      db_connection: NpgsqlConnection   #name of DbConnection descendant class

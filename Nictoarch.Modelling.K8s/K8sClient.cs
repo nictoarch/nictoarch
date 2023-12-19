@@ -20,7 +20,6 @@ using k8s;
 using k8s.Authentication;
 using k8s.Autorest;
 using k8s.Exceptions;
-using Nictoarch.Modelling.K8s.Spec;
 
 namespace Nictoarch.Modelling.K8s
 {
@@ -37,39 +36,16 @@ namespace Nictoarch.Modelling.K8s
         private readonly object m_apiInfosLock = new object();
         private IReadOnlyList<ApiInfo>? m_apiInfos = null;
 
-        internal static KubernetesClientConfiguration GetConfiguration(ProviderConfig.ConnectViaType connectVia, string? configFile, double? httpClientTimeoutSeconds = null)
+        internal static KubernetesClientConfiguration GetConfiguration(string? configFile, double? httpClientTimeoutSeconds = null)
         {
             KubernetesClientConfiguration config;
-            switch (connectVia)
+            if (configFile != null)
             {
-            case ProviderConfig.ConnectViaType.auto:
-                if (KubernetesClientConfiguration.IsInCluster())
-                {
-                    config = KubernetesClientConfiguration.InClusterConfig();
-                }
-                else
-                {
-                    config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
-                }
-                break;
-
-            case ProviderConfig.ConnectViaType.config_file:
-                if (configFile != null)
-                {
-                    config = KubernetesClientConfiguration.BuildConfigFromConfigFile(configFile);
-                }
-                else
-                {
-                    config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
-                }
-                break;
-
-            case ProviderConfig.ConnectViaType.cluster:
-                config = KubernetesClientConfiguration.InClusterConfig();
-                break;
-
-            default:
-                throw new Exception("Unexpected connect via " + connectVia);
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile(configFile);
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
             }
 
             if (httpClientTimeoutSeconds != null)
@@ -148,7 +124,7 @@ namespace Nictoarch.Modelling.K8s
         }
 
         //see https://iximiuz.com/en/posts/kubernetes-api-structure-and-terminology/
-        internal async Task<IReadOnlyList<JToken>> GetResources(string? apiGroup, string resourceKind, string? @namespace, string? labelSelector, CancellationToken cancellationToken)
+        internal async Task<JArray> GetResources(string? apiGroup, string resourceKind, string? @namespace, string? labelSelector, CancellationToken cancellationToken)
         {
             IReadOnlyList<ApiInfo> apis = await this.GetApiInfosCached(cancellationToken);
 
@@ -225,7 +201,7 @@ namespace Nictoarch.Modelling.K8s
             }
 
             JArray resultList = (JArray)resultObj.Properties["items"];
-            return resultList.ChildrenTokens;
+            return resultList;
         }
 
         internal async Task<IReadOnlyList<ApiInfo>> GetApiInfosCached(CancellationToken cancellationToken)

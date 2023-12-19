@@ -237,7 +237,65 @@ namespace Nictoarch.Modelling.Core
 
             public override List<Entity> GetEntities(JToken extractedData)
             {
-                throw new NotImplementedException();
+                List<Entity> result = new List<Entity>();
+                switch (extractedData.Type)
+                {
+                case JTokenType.Undefined:
+                    break;
+                case JTokenType.Object:
+                    result.Add(this.ToEntity(extractedData));
+                    break;
+                case JTokenType.Array:
+                    foreach (JToken child in ((JArray)extractedData).ChildrenTokens)
+                    {
+                        result.Add(this.ToEntity(child));
+                    }
+                    break;
+                default:
+                    throw new Exception("Extract should result in a single object or object array, but it returned " + extractedData.Type);
+                }
+                return result;
+            }
+
+            private Entity ToEntity(JToken resource)
+            {
+                string typeValue = this.EvaluateValueExpression(resource, this.type, nameof(this.type));
+                string semanticIdValue = this.EvaluateValueExpression(resource, this.semantic_id, nameof(this.semantic_id));
+                string domainIdValue = this.domain_id != null ? this.EvaluateValueExpression(resource, this.domain_id, nameof(this.domain_id)) : semanticIdValue;
+                string displayNameValue = this.display_name != null ? this.EvaluateValueExpression(resource, this.display_name, nameof(this.display_name)): semanticIdValue;
+
+                Entity entity = new Entity() {
+                    type = typeValue,
+                    domain_id = domainIdValue,
+                    semantic_id = semanticIdValue,
+                    display_name = displayNameValue
+                };
+                entity.Validate();
+                return entity;
+            }
+
+            private string EvaluateValueExpression(JToken objectTree, JsonataQuery query, string expressionName)
+            {
+                JToken result;
+                try
+                {
+                    result = query.Eval(objectTree);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Failed to execute entity expression query '{expressionName}' ('{query}'): {ex.Message}", ex);
+                }
+
+                switch (result.Type)
+                {
+                case JTokenType.Undefined:
+                case JTokenType.Null:
+                    throw new Exception($"Entity expression query '{expressionName}' ('{query}') returned a non-value ({result.Type})");
+                case JTokenType.String:
+                    return (string)result;
+                default:
+                    return result.ToFlatString();
+                }
             }
         }
         #endregion
