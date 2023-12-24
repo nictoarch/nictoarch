@@ -55,6 +55,7 @@ namespace Nictoarch.Modelling.Core
                 .WithTypeDiscriminatingNodeDeserializer(options => {
                     
                     options.AddTypeDiscriminator(modelSpecObjectFactory.Discriminator);
+                    options.AddTypeDiscriminator(new EntitiesSelectorTypeDiscriminator());
 
                     foreach (ITypeDiscriminator discriminator in registry.GetYamlTypeDiscriminators())
                     {
@@ -228,7 +229,7 @@ namespace Nictoarch.Modelling.Core
             }
         }
 
-        public sealed class EntitesSelectorQueryPerField : EntitiesSelectorBase
+        public sealed class EntitiesSelectorQueryPerField : EntitiesSelectorBase
         {
             [Required] public JsonataQuery type { get; set; } = default!;
             [Required] public JsonataQuery semantic_id { get; set; } = default!;

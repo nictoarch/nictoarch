@@ -20,11 +20,13 @@ using k8s;
 using k8s.Authentication;
 using k8s.Autorest;
 using k8s.Exceptions;
+using NLog;
 
 namespace Nictoarch.Modelling.K8s
 {
     internal sealed class K8sClient: IDisposable
     {
+        private readonly Logger m_logger = LogManager.GetCurrentClassLogger();
         private readonly SocketsHttpHandler m_httpHandler;
         private readonly JsonSerializerOptions m_jsonSerializerOptions;
         private readonly bool m_disableHttp2;
@@ -280,7 +282,6 @@ namespace Nictoarch.Modelling.K8s
                 RequestUri = new Uri(this.m_baseUri, relativeUri),
             })
             {
-
                 if (!this.m_disableHttp2)
                 {
                     httpRequest.Version = HttpVersion.Version20;
@@ -301,6 +302,8 @@ namespace Nictoarch.Modelling.K8s
                     httpRequest.Content = new StringContent(requestContent, Encoding.UTF8);
                     httpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json; charset=utf-8");
                 }
+
+                this.m_logger.Trace($"{httpRequest.Method} {httpRequest.RequestUri} ({httpRequest.Version}, {httpRequest.Content?.Headers.ContentType}) ");
 
                 return SendRequestRaw(httpRequest, cancellationToken);
             }

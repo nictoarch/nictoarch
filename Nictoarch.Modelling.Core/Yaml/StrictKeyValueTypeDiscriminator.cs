@@ -12,7 +12,8 @@ namespace Nictoarch.Modelling.Core.Yaml
     //based on https://github.com/aaubry/YamlDotNet/blob/847230593e95750d4294ca72c98a4bd46bdcf265/YamlDotNet/Serialization/BufferedDeserialization/TypeDiscriminators/KeyValueTypeDiscriminator.cs
     public sealed class StrictKeyValueTypeDiscriminator : ITypeDiscriminator
     {
-        public Type BaseType { get; private set; }
+        private readonly Type m_baseType;
+        Type ITypeDiscriminator.BaseType => this.m_baseType;
         private readonly string m_targetKey;
         private readonly IDictionary<string, Type> m_typeMapping;
 
@@ -35,7 +36,7 @@ namespace Nictoarch.Modelling.Core.Yaml
                     throw new ArgumentOutOfRangeException(nameof(typeMapping), $"{keyValuePair.Value} is not a assignable to {baseType}");
                 }
             }
-            this.BaseType = baseType;
+            this.m_baseType = baseType;
             this.m_targetKey = targetKey;
             this.m_typeMapping = typeMapping;
         }
@@ -51,7 +52,7 @@ namespace Nictoarch.Modelling.Core.Yaml
         /// <param name="suggestedType">The output type discriminated. Null if there target key was not present of if the value
         /// of the target key was not within the type mapping.</param>
         /// <returns>Returns true if the discriminator matched the yaml stream.</returns>
-        public bool TryDiscriminate(IParser parser, out Type? suggestedType)
+        bool ITypeDiscriminator.TryDiscriminate(IParser parser, out Type? suggestedType)
         {
             string? foundScalarValue = null;
 
@@ -77,11 +78,11 @@ namespace Nictoarch.Modelling.Core.Yaml
             // we could not find our key, thus we could not determine correct child type
             if (foundScalarValue != null)
             {
-                throw new YamlException(parser.Current!.Start, parser.Current!.End, $"No proper child type found for {this.BaseType.Name}.{this.m_targetKey} value '{foundScalarValue}'. Known values are: {String.Join(", ", this.m_typeMapping.Keys.OrderBy(k => k))}");
+                throw new YamlException(parser.Current!.Start, parser.Current!.End, $"No proper child type found for {this.m_baseType.Name}.{this.m_targetKey} value '{foundScalarValue}'. Known values are: {String.Join(", ", this.m_typeMapping.Keys.OrderBy(k => k))}");
             }
             else
             {
-                throw new YamlException(parser.Current!.Start, parser.Current!.End, $"No proper child type found for {this.BaseType.Name}.{this.m_targetKey} because it is not specified");
+                throw new YamlException(parser.Current!.Start, parser.Current!.End, $"No proper child type found for {this.m_baseType.Name}.{this.m_targetKey} because it is not specified");
             }
         }
     }
