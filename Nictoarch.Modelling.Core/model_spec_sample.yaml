@@ -43,9 +43,9 @@ data:
           # label_query: ""
         # filter is optional, applied before transform
         filter: |
-          $.[
-                $not($contains(metadata.name, "-exclude-"))
-                and metadata.name != "something-weird"
+          $[
+            $not($contains(metadata.name, "-exclude-"))
+            and metadata.name != "something-weird"
           ]
         # element should contain either 'entities' (, 'links') or 'invalid' section
         entities: # entities - may specify explicitly how to get each part of entity
@@ -58,11 +58,11 @@ data:
           namespace: cpl-services
         # entities - or just provide a single query to get everything
         entities: |
-          {
-            type: "statefulset",
-            semantic_id: metadata.name,
-            domain_id: metadata.uid,
-            display_name: metadata.name
+          $.{
+            "type": "statefulset",
+            "semantic_id": metadata.name,
+            "domain_id": metadata.uid,
+            "display_name": metadata.name
           }
 #  - source:
 #      type: db

@@ -21,12 +21,12 @@ namespace Nictoarch.Modelling.Core.Spec
         private readonly ModelSpecImpl m_spec;
         private readonly SourceRegistry m_registry;
 
-        public string Name => m_spec.name;
+        public string Name => this.m_spec.name;
 
         private ModelSpec(ModelSpecImpl spec, SourceRegistry registry)
         {
-            m_spec = spec;
-            m_registry = registry;
+            this.m_spec = spec;
+            this.m_registry = registry;
         }
 
         public static ModelSpec LoadFromFile(string fileName, SourceRegistry registry)
@@ -85,11 +85,11 @@ namespace Nictoarch.Modelling.Core.Spec
             List<Link> links = new List<Link>();
             List<JToken> invalidObjects = new List<JToken>();
 
-            foreach (ModelPart part in m_spec.data)
+            foreach (ModelPart part in this.m_spec.data)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                if (!m_registry.GetProviderFactory(part.source.type, out SourceRegistry.SourceFactoryWrapper? factory))
+                if (!this.m_registry.GetProviderFactory(part.source.type, out SourceRegistry.SourceFactoryWrapper? factory))
                 {
                     throw new Exception("Should not happen");
                 }
@@ -105,14 +105,7 @@ namespace Nictoarch.Modelling.Core.Spec
 
                         if (element.filter != null)
                         {
-                            try
-                            {
-                                data = element.filter.Eval(data);
-                            }
-                            catch (Exception ex)
-                            {
-                                throw new Exception($"Failed to executeFilter query: {ex.Message}. (The query: {element.filter})", ex);
-                            }
+                            data = element.filter.Eval(data, "filter");
                         }
 
                         cancellationToken.ThrowIfCancellationRequested();
@@ -134,7 +127,7 @@ namespace Nictoarch.Modelling.Core.Spec
 
                         if (element.invalid != null)
                         {
-                            JToken newInvalids = element.invalid.Eval(data);
+                            JToken newInvalids = element.invalid.Eval(data, "invalid");
                             switch (newInvalids.Type)
                             {
                                 case JTokenType.Undefined:
@@ -155,7 +148,7 @@ namespace Nictoarch.Modelling.Core.Spec
                 }
             }
 
-            return new Model(m_spec.name, entities, links, invalidObjects);
+            return new Model(this.m_spec.name, entities, links, invalidObjects);
         }
 
         /*

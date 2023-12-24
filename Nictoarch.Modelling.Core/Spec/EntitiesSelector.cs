@@ -27,36 +27,28 @@ namespace Nictoarch.Modelling.Core.Spec
 
         internal EntitiesSelectorSingleQuery(JsonataQuery query)
         {
-            m_query = query;
+            this.m_query = query;
         }
 
         public override List<Entity> GetEntities(JToken extractedData)
         {
-            JToken queryResult;
-            try
-            {
-                queryResult = m_query.Eval(extractedData);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to eval JsonataQuery: {ex.Message}. (The query was: {m_query})", ex);
-            }
+            JToken queryResult = this.m_query.Eval(extractedData, "entities");
             List<Entity> result = new List<Entity>();
             switch (queryResult.Type)
             {
             case JTokenType.Undefined:
                 break;
             case JTokenType.Object:
-                result.Add(ToEntity(queryResult));
+                result.Add(this.ToEntity(queryResult));
                 break;
             case JTokenType.Array:
                 foreach (JToken child in ((JArray)queryResult).ChildrenTokens)
                 {
-                    result.Add(ToEntity(child));
+                    result.Add(this.ToEntity(child));
                 }
                 break;
             default:
-                throw new Exception("Entity query should result in a single object or object array, but it returned " + queryResult.Type);
+                throw new JsonataEvalException("Entity query should result in a single object or object array, but it returned " + queryResult.Type, this.m_query, extractedData);
             }
             return result;
         }
@@ -89,12 +81,12 @@ namespace Nictoarch.Modelling.Core.Spec
             case JTokenType.Undefined:
                 break;
             case JTokenType.Object:
-                result.Add(ToEntity(extractedData));
+                result.Add(this.ToEntity(extractedData));
                 break;
             case JTokenType.Array:
                 foreach (JToken child in ((JArray)extractedData).ChildrenTokens)
                 {
-                    result.Add(ToEntity(child));
+                    result.Add(this.ToEntity(child));
                 }
                 break;
             default:
@@ -105,10 +97,10 @@ namespace Nictoarch.Modelling.Core.Spec
 
         private Entity ToEntity(JToken resource)
         {
-            string typeValue = EvaluateValueExpression(resource, type, nameof(type));
-            string semanticIdValue = EvaluateValueExpression(resource, semantic_id, nameof(semantic_id));
-            string domainIdValue = domain_id != null ? EvaluateValueExpression(resource, domain_id, nameof(domain_id)) : semanticIdValue;
-            string displayNameValue = display_name != null ? EvaluateValueExpression(resource, display_name, nameof(display_name)) : semanticIdValue;
+            string typeValue = this.EvaluateValueExpression(resource, this.type, nameof(this.type));
+            string semanticIdValue = this.EvaluateValueExpression(resource, this.semantic_id, nameof(this.semantic_id));
+            string domainIdValue = this.domain_id != null ? this.EvaluateValueExpression(resource, this.domain_id, nameof(this.domain_id)) : semanticIdValue;
+            string displayNameValue = this.display_name != null ? this.EvaluateValueExpression(resource, this.display_name, nameof(this.display_name)) : semanticIdValue;
 
             Entity entity = new Entity() {
                 type = typeValue,
@@ -122,21 +114,13 @@ namespace Nictoarch.Modelling.Core.Spec
 
         private string EvaluateValueExpression(JToken objectTree, JsonataQuery query, string expressionName)
         {
-            JToken result;
-            try
-            {
-                result = query.Eval(objectTree);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to execute entity expression query '{expressionName}' ('{query}'): {ex.Message}", ex);
-            }
+            JToken result = query.Eval(objectTree, expressionName);
 
             switch (result.Type)
             {
             case JTokenType.Undefined:
             case JTokenType.Null:
-                throw new Exception($"Entity expression query '{expressionName}' ('{query}') returned a non-value ({result.Type})");
+                throw new JsonataEvalException($"Entity expression query '{expressionName}' returned a non-value ({result.Type})", query, objectTree);
             case JTokenType.String:
                 return (string)result;
             default:
