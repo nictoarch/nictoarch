@@ -34,6 +34,7 @@ namespace Nictoarch.Modelling.Core.Yaml
         {
             if (parser.Current is Scalar)
             {
+                //actually will not happen, but some type discriminator is needed to return query per field. 
                 suggestedType = typeof(ModelSpec.EntitiesSelectorSingleQuery);
             }
             else

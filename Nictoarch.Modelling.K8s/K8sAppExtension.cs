@@ -53,7 +53,8 @@ namespace Nictoarch.Modelling.K8s
             KubernetesClientConfiguration config = K8sClient.GetConfiguration(configFileName);
             using (K8sClient client = new K8sClient(config))
             {
-                IReadOnlyList<ApiInfo> apis = await client.GetApiInfosCached(CancellationToken.None);
+                await client.InitAsync(CancellationToken.None);
+                IReadOnlyList<ApiInfo> apis = client.ApiInfos;
                 if (showDetails)
                 {
                     JToken result = JToken.FromObject(apis);

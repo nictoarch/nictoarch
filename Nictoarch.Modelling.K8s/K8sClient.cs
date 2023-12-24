@@ -35,8 +35,9 @@ namespace Nictoarch.Modelling.K8s
         private readonly string m_tlsServerName;
         private readonly ServiceClientCredentials m_clientCredentials;
 
-        private readonly object m_apiInfosLock = new object();
         private IReadOnlyList<ApiInfo>? m_apiInfos = null;
+
+        public IReadOnlyList<ApiInfo> ApiInfos => this.m_apiInfos ?? throw new Exception($"Please call {nameof(this.InitAsync)}() before accessing {nameof(this.ApiInfos)}");
 
         internal static KubernetesClientConfiguration GetConfiguration(string? configFile, double? httpClientTimeoutSeconds = null)
         {
@@ -125,21 +126,24 @@ namespace Nictoarch.Modelling.K8s
             };
         }
 
+        internal async Task InitAsync(CancellationToken cancellationToken)
+        {
+            this.m_apiInfos = await this.RequestApiInfos(cancellationToken);
+        }
+
         //see https://iximiuz.com/en/posts/kubernetes-api-structure-and-terminology/
         internal async Task<JArray> GetResources(string? apiGroup, string resourceKind, string? @namespace, string? labelSelector, CancellationToken cancellationToken)
         {
-            IReadOnlyList<ApiInfo> apis = await this.GetApiInfosCached(cancellationToken);
-
             //TODO: use proper way to get plural names, but it looks rather ok for now
             string resourcePlural;
             string resourceSingular;
 
             //get singular/plural and api group
             {
-                ApiInfo? resourceInfo = apis.FirstOrDefault(a => a.resource_singular == resourceKind);
+                ApiInfo? resourceInfo = this.ApiInfos.FirstOrDefault(a => a.resource_singular == resourceKind);
                 if (resourceInfo == null)
                 {
-                    resourceInfo = apis.FirstOrDefault(a => a.resource_plural == resourceKind);
+                    resourceInfo = this.ApiInfos.FirstOrDefault(a => a.resource_plural == resourceKind);
                 }
 
                 if (resourceInfo == null)
@@ -204,22 +208,6 @@ namespace Nictoarch.Modelling.K8s
 
             JArray resultList = (JArray)resultObj.Properties["items"];
             return resultList;
-        }
-
-        internal async Task<IReadOnlyList<ApiInfo>> GetApiInfosCached(CancellationToken cancellationToken)
-        {
-            if (this.m_apiInfos == null)
-            {
-                IReadOnlyList<ApiInfo> apiInfos = await this.RequestApiInfos(cancellationToken);
-                lock (this.m_apiInfosLock)
-                {
-                    if (this.m_apiInfos == null)
-                    {
-                        this.m_apiInfos = apiInfos;
-                    }
-                }
-            }
-            return this.m_apiInfos;
         }
 
         private async Task<IReadOnlyList<ApiInfo>> RequestApiInfos(CancellationToken cancellationToken)
@@ -303,7 +291,7 @@ namespace Nictoarch.Modelling.K8s
                     httpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json; charset=utf-8");
                 }
 
-                this.m_logger.Trace($"{httpRequest.Method} {httpRequest.RequestUri} ({httpRequest.Version}, {httpRequest.Content?.Headers.ContentType}) ");
+                //this.m_logger.Trace($"{httpRequest.Method} {httpRequest.RequestUri} ({httpRequest.Version}, {httpRequest.Content?.Headers.ContentType}) ");
 
                 return SendRequestRaw(httpRequest, cancellationToken);
             }

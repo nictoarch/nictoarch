@@ -104,15 +104,29 @@ namespace Nictoarch.Modelling.Core
 
                         if (element.filter != null)
                         {
-                            data = element.filter.Eval(data);
+                            try
+                            {
+                                data = element.filter.Eval(data);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new Exception($"Failed to executeFilter query: {ex.Message}. (The query: {element.filter})", ex);
+                            }
                         }
 
                         cancellationToken.ThrowIfCancellationRequested();
 
                         if (element.entities != null)
                         {
-                            List<Entity> newEntities = element.entities.GetEntities(data);
-                            entities.AddRange(newEntities);
+                            try
+                            {
+                                List<Entity> newEntities = element.entities.GetEntities(data);
+                                entities.AddRange(newEntities);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new Exception("Failed to get Entities from the element: " + ex.Message, ex);
+                            }
                         }
 
                         cancellationToken.ThrowIfCancellationRequested();
@@ -177,7 +191,8 @@ namespace Nictoarch.Modelling.Core
         public abstract class EntitiesSelectorBase
         {
             public abstract List<Entity> GetEntities(JToken extractedData);
-
+            
+            //needed to parse scalars
             public static EntitiesSelectorBase Parse(string v)
             {
                 return new EntitiesSelectorSingleQuery(new JsonataQuery(v));
@@ -195,7 +210,15 @@ namespace Nictoarch.Modelling.Core
 
             public override List<Entity> GetEntities(JToken extractedData)
             {
-                JToken queryResult = this.m_query.Eval(extractedData);
+                JToken queryResult;
+                try
+                {
+                    queryResult = this.m_query.Eval(extractedData);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Failed to eval JsonataQuery: {ex.Message}. (The query was: {this.m_query})", ex);
+                }
                 List<Entity> result = new List<Entity>();
                 switch (queryResult.Type)
                 {

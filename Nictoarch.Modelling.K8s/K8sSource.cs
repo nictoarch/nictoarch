@@ -14,9 +14,9 @@ namespace Nictoarch.Modelling.K8s
     {
         private readonly K8sClient m_client;
 
-        internal K8sSource(KubernetesClientConfiguration configuration)
+        internal K8sSource(K8sClient client)
         {
-            this.m_client = new K8sClient(configuration);
+            this.m_client = client;
         }
 
         ValueTask IAsyncDisposable.DisposeAsync()

@@ -18,11 +18,13 @@ namespace Nictoarch.Modelling.K8s
             yield break;
         }
 
-        Task<ISource> ISourceFactory<K8sSourceConfig, K8sSource, K8sExtractConfig>.GetSource(K8sSourceConfig sourceConfig, CancellationToken cancellationToken)
+        async Task<ISource> ISourceFactory<K8sSourceConfig, K8sSource, K8sExtractConfig>.GetSource(K8sSourceConfig sourceConfig, CancellationToken cancellationToken)
         {
             KubernetesClientConfiguration k8sConfig = K8sClient.GetConfiguration(sourceConfig.config_file, sourceConfig.connect_timeout_seconds);
-            K8sSource source = new K8sSource(k8sConfig);
-            return Task.FromResult((ISource)source);
+            K8sClient client = new K8sClient(k8sConfig);
+            await client.InitAsync(cancellationToken);
+            K8sSource source = new K8sSource(client);
+            return source;
         }
     }
 }
