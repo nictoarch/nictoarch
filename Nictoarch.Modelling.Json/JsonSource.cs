@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Jsonata.Net.Native.Json;
 using Nictoarch.Common.Xml2Json;
 using Nictoarch.Modelling.Core;
-using static Nictoarch.Modelling.Json.JsonExtractConfig;
 
 namespace Nictoarch.Modelling.Json
 {
@@ -16,7 +15,7 @@ namespace Nictoarch.Modelling.Json
         private readonly string m_sourceDataString;
 
         //caching
-        private ESourceTransform? m_transform = null;
+        private JsonExtractConfig.ESourceTransform? m_transform = null;
         private JToken? m_extractedData = null;
 
         public JsonSource(string sourceDataString)
@@ -37,10 +36,10 @@ namespace Nictoarch.Modelling.Json
                 this.m_transform = extractConfig.transform;
                 switch (this.m_transform.Value)
                 {
-                case ESourceTransform.none:
+                case JsonExtractConfig.ESourceTransform.none:
                     this.m_extractedData = JToken.Parse(this.m_sourceDataString);
                     break;
-                case ESourceTransform.xml2json:
+                case JsonExtractConfig.ESourceTransform.xml2json:
                     Xml2JsonConverter converter = new Xml2JsonConverter();
                     this.m_extractedData = converter.Convert(this.m_sourceDataString, cancellationToken);
                     break;

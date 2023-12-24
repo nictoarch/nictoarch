@@ -5,14 +5,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Jsonata.Net.Native;
-using Nictoarch.Modelling.Core;
+using Nictoarch.Modelling.Core.Spec;
 using Nictoarch.Modelling.Core.Yaml;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 
 namespace Nictoarch.Modelling.K8s
 {
-    internal sealed class K8sExtractConfig: ModelSpec.ExtractConfigBase, IYamlOnDeserialized
+    internal sealed class K8sExtractConfig: ExtractConfigBase, IYamlOnDeserialized
     {
         public string? api_group { get; set; } = null; //eg "apps" or "apps/v1". use "v1" or "core" for core resources
         [Required] public string resource_kind { get; set; } = default!; //eg "deployment" or "deployments"

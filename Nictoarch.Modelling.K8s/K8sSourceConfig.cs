@@ -1,15 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
-using Nictoarch.Modelling.Core;
+using Nictoarch.Modelling.Core.Spec;
 
 namespace Nictoarch.Modelling.K8s
 {
-    public sealed class K8sSourceConfig : ModelSpec.SourceConfigBase
+    public sealed class K8sSourceConfig : SourceConfigBase
     {
         public string? config_file { get; set; } = null;
         public double? connect_timeout_seconds { get; set; } = null;

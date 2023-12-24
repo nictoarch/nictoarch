@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nictoarch.Modelling.Core.Spec;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.BufferedDeserialization.TypeDiscriminators;
@@ -46,7 +47,7 @@ namespace Nictoarch.Modelling.Core.Yaml
         {
             object result = this.m_fallback.Create(type);
 
-            if (typeof(ModelSpec.SourceConfigBase).IsAssignableFrom(type))
+            if (typeof(SourceConfigBase).IsAssignableFrom(type))
             {
                 if (!this.m_registry.GetProviderByConfigType(type, out SourceRegistry.SourceFactoryWrapper? factory))
                 {
@@ -85,7 +86,7 @@ namespace Nictoarch.Modelling.Core.Yaml
                 this.m_parent = factory;
             }
 
-            Type ITypeDiscriminator.BaseType => typeof(ModelSpec.ExtractConfigBase);
+            Type ITypeDiscriminator.BaseType => typeof(ExtractConfigBase);
 
             bool ITypeDiscriminator.TryDiscriminate(IParser buffer, out Type? suggestedType)
             {

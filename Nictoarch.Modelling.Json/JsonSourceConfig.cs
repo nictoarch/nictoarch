@@ -2,11 +2,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http.Headers;
 using System.Text;
-using Nictoarch.Modelling.Core;
+using Nictoarch.Modelling.Core.Spec;
 
 namespace Nictoarch.Modelling.Json
 {
-    public sealed class JsonSourceConfig: ModelSpec.SourceConfigBase
+    public sealed class JsonSourceConfig: SourceConfigBase
     {
         public abstract class Auth
         {

@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Jsonata.Net.Native.Json;
 using Nictoarch.Modelling.Core.Elements;
+using Nictoarch.Modelling.Core.Spec;
 using Nictoarch.Modelling.Core.Yaml;
 using NLog;
 using YamlDotNet.Serialization;
@@ -83,8 +84,8 @@ namespace Nictoarch.Modelling.Core
             Dictionary<string, Type> sourceTypeMapping = this.m_factoryWrappers.Values.ToDictionary(f => f.Name, f => f.ConfigType);
 
             ITypeDiscriminator configTypeDiscriminator = new StrictKeyValueTypeDiscriminator(
-                baseType: typeof(ModelSpec.SourceConfigBase),
-                targetKey: nameof(ModelSpec.SourceConfigBase.type),
+                baseType: typeof(SourceConfigBase),
+                targetKey: nameof(SourceConfigBase.type),
                 typeMapping: sourceTypeMapping
             );
 
@@ -130,11 +131,11 @@ namespace Nictoarch.Modelling.Core
 
                 this.m_getSourceMethod = typeof(ISourceFactory<,,>)
                     .MakeGenericType(this.ConfigType, this.SourceType, this.ExtractType)
-                    .GetMethod(nameof(ISourceFactory<ModelSpec.SourceConfigBase, ISource<ModelSpec.ExtractConfigBase>, ModelSpec.ExtractConfigBase>.GetSource))!;
+                    .GetMethod(nameof(ISourceFactory<SourceConfigBase, ISource<ExtractConfigBase>, ExtractConfigBase>.GetSource))!;
 
                 this.m_extractDataMethod = typeof(ISource<>)
                     .MakeGenericType(this.ExtractType)
-                    .GetMethod(nameof(ISource<ModelSpec.ExtractConfigBase>.Extract))!;
+                    .GetMethod(nameof(ISource<ExtractConfigBase>.Extract))!;
 
                 /*
                 this.m_getProviderMethod = typeof(IModelProviderFactory<,,>)
@@ -154,7 +155,7 @@ namespace Nictoarch.Modelling.Core
                 return this.m_factoryInstance.GetYamlTypeDiscriminators();
             }
 
-            internal Task<ISource> GetSource(ModelSpec.SourceConfigBase sourceConfig, CancellationToken cancellationToken)
+            internal Task<ISource> GetSource(SourceConfigBase sourceConfig, CancellationToken cancellationToken)
             {
                 if (!this.ConfigType.IsAssignableFrom(sourceConfig.GetType())) 
                 {
@@ -164,7 +165,7 @@ namespace Nictoarch.Modelling.Core
                 return (Task<ISource>)result;
             }
 
-            internal Task<JToken> Extract(ISource source, ModelSpec.ExtractConfigBase extractConfig, CancellationToken cancellationToken)
+            internal Task<JToken> Extract(ISource source, ExtractConfigBase extractConfig, CancellationToken cancellationToken)
             {
                 if (!this.ExtractType.IsAssignableFrom(extractConfig.GetType()))
                 {

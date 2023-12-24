@@ -7,6 +7,7 @@ using Nictoarch.Common;
 using Nictoarch.Modelling.Core;
 using Nictoarch.Modelling.Core.AppSupport;
 using Nictoarch.Modelling.Core.Elements;
+using Nictoarch.Modelling.Core.Spec;
 using NLog;
 
 namespace Nictoarch.Modelling.App

@@ -7,13 +7,14 @@ using YamlDotNet.Core.Events;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization.BufferedDeserialization.TypeDiscriminators;
 using YamlDotNet.Serialization;
+using Nictoarch.Modelling.Core.Spec;
 
 namespace Nictoarch.Modelling.Core.Yaml
 {
     //based on https://github.com/aaubry/YamlDotNet/blob/847230593e95750d4294ca72c98a4bd46bdcf265/YamlDotNet/Serialization/BufferedDeserialization/TypeDiscriminators/KeyValueTypeDiscriminator.cs
     internal sealed class EntitiesSelectorTypeDiscriminator : ITypeDiscriminator
     {
-        Type ITypeDiscriminator.BaseType => typeof(ModelSpec.EntitiesSelectorBase);
+        Type ITypeDiscriminator.BaseType => typeof(EntitiesSelectorBase);
 
         public EntitiesSelectorTypeDiscriminator()
         {
@@ -35,11 +36,11 @@ namespace Nictoarch.Modelling.Core.Yaml
             if (parser.Current is Scalar)
             {
                 //actually will not happen, but some type discriminator is needed to return query per field. 
-                suggestedType = typeof(ModelSpec.EntitiesSelectorSingleQuery);
+                suggestedType = typeof(EntitiesSelectorSingleQuery);
             }
             else
             {
-                suggestedType = typeof(ModelSpec.EntitiesSelectorQueryPerField);
+                suggestedType = typeof(EntitiesSelectorQueryPerField);
             }
             return true;
         }
