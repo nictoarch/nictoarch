@@ -11,6 +11,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="Npgsql" Version="8.0.1" />
+	  <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\Nictoarch.Modelling.Core\Nictoarch.Modelling.Core.csproj" />
 	</ItemGroup>
 

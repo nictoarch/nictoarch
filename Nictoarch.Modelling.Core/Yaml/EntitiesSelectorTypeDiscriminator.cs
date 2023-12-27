@@ -33,7 +33,7 @@ namespace Nictoarch.Modelling.Core.Yaml
         /// <returns>Returns true if the discriminator matched the yaml stream.</returns>
         bool ITypeDiscriminator.TryDiscriminate(IParser parser, out Type? suggestedType)
         {
-            if (parser.Current is Scalar)
+            if (parser.TryConsume<Scalar>(out _))
             {
                 //actually will not happen, but some type discriminator is needed to return query per field. 
                 suggestedType = typeof(EntitiesSelectorSingleQuery);

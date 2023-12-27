@@ -33,11 +33,11 @@ namespace Nictoarch.Modelling.Core.Spec
         {
             using (StreamReader reader = new StreamReader(fileName))
             {
-                return Load(reader, registry);
+                return Load(reader, registry, basePath: Path.GetDirectoryName(fileName));
             }
         }
 
-        public static ModelSpec Load(TextReader reader, SourceRegistry registry)
+        public static ModelSpec Load(TextReader reader, SourceRegistry registry, string? basePath = null)
         {
             ModelSpecObjectFactory modelSpecObjectFactory = new ModelSpecObjectFactory(registry);
 
@@ -49,11 +49,19 @@ namespace Nictoarch.Modelling.Core.Spec
                     nodeDeserializerFactory: innerDeserialzier => new ValidatingDeserializer(innerDeserialzier),
                     where: syntax => syntax.InsteadOf<ObjectNodeDeserializer>()
                 )
+
                 .WithTypeConverter(new JsonataQueryYamlConverter())
 
+                .WithTagMapping(YamlnplaceNodeDeserializer.TAG, typeof(object)) // tag needs to be registered so that validation passes
+                /*
+                .WithNodeDeserializer(
+                    new YamlnplaceNodeDeserializer(basePath ?? Directory.GetCurrentDirectory()),
+                    where: syntax => syntax.OnTop()
+                )
+                */
+
                 //see https://github.com/aaubry/YamlDotNet/wiki/Deserialization---Type-Discriminators#determining-type-based-on-the-value-of-a-key
-                .WithTypeDiscriminatingNodeDeserializer(options =>
-                {
+                .WithTypeDiscriminatingNodeDeserializer(options => {
 
                     options.AddTypeDiscriminator(modelSpecObjectFactory.Discriminator);
                     options.AddTypeDiscriminator(new EntitiesSelectorTypeDiscriminator());
