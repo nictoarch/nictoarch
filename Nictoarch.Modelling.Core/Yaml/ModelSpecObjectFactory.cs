@@ -64,17 +64,17 @@ namespace Nictoarch.Modelling.Core.Yaml
 
         object? IObjectFactory.CreatePrimitive(Type type)
         {
-            return m_fallback.CreatePrimitive(type);
+            return this.m_fallback.CreatePrimitive(type);
         }
 
         bool IObjectFactory.GetDictionary(IObjectDescriptor descriptor, out IDictionary? dictionary, out Type[]? genericArguments)
         {
-            return m_fallback.GetDictionary(descriptor, out dictionary, out genericArguments);
+            return this.m_fallback.GetDictionary(descriptor, out dictionary, out genericArguments);
         }
 
         Type IObjectFactory.GetValueType(Type type)
         {
-            return m_fallback.GetValueType(type);
+            return this.m_fallback.GetValueType(type);
         }
 
         private sealed class TypeDiscriminator : ITypeDiscriminator

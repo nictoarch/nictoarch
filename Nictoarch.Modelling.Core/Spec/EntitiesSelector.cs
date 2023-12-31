@@ -60,6 +60,22 @@ namespace Nictoarch.Modelling.Core.Spec
                 throw new Exception($"Attemptiong to convert a JSON {token.Type} to Entity. Should be a JSON Object");
             }
             JObject obj = (JObject)token;
+            if (!obj.Keys.Contains(nameof(Entity.type)))
+            {
+                throw new Exception($"Entity selector missing required property '{nameof(Entity.type)}':\n{token.ToIndentedString()}");
+            }
+            if (!obj.Properties.TryGetValue(nameof(Entity.semantic_id), out JToken? semanticIdToken))
+            {
+                throw new Exception($"Entity selector missing required property '{nameof(Entity.semantic_id)}':\n{token.ToIndentedString()}");
+            }
+            if (!obj.Keys.Contains(nameof(Entity.domain_id)))
+            {
+                obj.Add(nameof(Entity.domain_id), semanticIdToken);
+            }
+            if (!obj.Keys.Contains(nameof(Entity.display_name))) 
+            {
+                obj.Add(nameof(Entity.display_name), semanticIdToken);
+            }
             Entity entity = obj.ToObject<Entity>();
             entity.Validate();
             return entity;
