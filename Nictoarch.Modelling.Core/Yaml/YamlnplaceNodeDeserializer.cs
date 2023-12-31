@@ -30,15 +30,17 @@ namespace Nictoarch.Modelling.Core.Yaml
 
         bool INodeDeserializer.Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value)
         {
-            if (parser.TryConsume<Scalar>(out Scalar? scalar) && scalar.Tag == TAG)
+            if (parser.Accept<Scalar>(out Scalar? scalar) && scalar.Tag == TAG)
             {
+                parser.MoveNext();  //consume scalar
+
                 string filePath = scalar.Value;
                 JsonataQuery? query;
                 int separatorIndex = filePath.IndexOf('#');
                 if (separatorIndex >= 0)
                 {
-                    filePath = filePath.Substring(0, separatorIndex);
                     string queryPath = filePath.Substring(separatorIndex + 1);
+                    filePath = filePath.Substring(0, separatorIndex);
                     try
                     {
                         query = new JsonataQuery(queryPath);

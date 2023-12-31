@@ -53,12 +53,10 @@ namespace Nictoarch.Modelling.Core.Spec
                 .WithTypeConverter(new JsonataQueryYamlConverter())
 
                 .WithTagMapping(YamlnplaceNodeDeserializer.TAG, typeof(object)) // tag needs to be registered so that validation passes
-                /*
                 .WithNodeDeserializer(
                     new YamlnplaceNodeDeserializer(basePath ?? Directory.GetCurrentDirectory()),
                     where: syntax => syntax.OnTop()
                 )
-                */
 
                 //see https://github.com/aaubry/YamlDotNet/wiki/Deserialization---Type-Discriminators#determining-type-based-on-the-value-of-a-key
                 .WithTypeDiscriminatingNodeDeserializer(options => {

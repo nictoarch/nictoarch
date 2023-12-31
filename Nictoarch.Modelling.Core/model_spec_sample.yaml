@@ -69,9 +69,9 @@ data:
       connection: NpgsqlConnection   #name of DbConnection descendant class
       #connection_string: "Server=127.0.0.1;Port=5432;Database=myDataBase;User Id=myUsername;Password=myPassword;"
       connection_args:
-        Server: 127.0.0.1
-        Port: 5432
-        Database: myDatabase
+        Server: !inplace secret.yaml#db.host
+        Port: !inplace secret.yaml#db.port
+        Database: !inplace secret.yaml#db.database
         "User Id": !inplace secret.yaml#db.user
         Password: !inplace secret.yaml#db.pass
     elements:
