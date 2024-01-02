@@ -21,6 +21,8 @@ namespace Nictoarch.Modelling.Core.Spec
         private readonly ModelSpecImpl m_spec;
         private readonly SourceRegistry m_registry;
 
+        public event Action<string>? OnTrace;
+
         public string Name => this.m_spec.name;
 
         private ModelSpec(ModelSpecImpl spec, SourceRegistry registry)
@@ -91,8 +93,11 @@ namespace Nictoarch.Modelling.Core.Spec
             List<Link> links = new List<Link>();
             List<JToken> invalidObjects = new List<JToken>();
 
+            this.OnTrace?.Invoke("Getting model " + this.Name);
+
             foreach (ModelPart part in this.m_spec.data)
             {
+                this.OnTrace?.Invoke($"Processing model part ({part.source.type})");
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (!this.m_registry.GetProviderFactory(part.source.type, out SourceRegistry.SourceFactoryWrapper? factory))
@@ -101,17 +106,20 @@ namespace Nictoarch.Modelling.Core.Spec
                 }
                 await using (ISource source = await factory.GetSource(part.source, cancellationToken))
                 {
+                    this.OnTrace?.Invoke($"Got source");
                     foreach (Element element in part.elements)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
 
                         JToken data = await factory.Extract(source, element.extract, cancellationToken);
+                        this.OnTrace?.Invoke($"Extracted element data:\n" + data.ToIndentedString());
 
                         cancellationToken.ThrowIfCancellationRequested();
 
                         if (element.filter != null)
                         {
                             data = element.filter.Eval(data, "filter");
+                            this.OnTrace?.Invoke($"Filtered element data:\n" + data.ToIndentedString());
                         }
 
                         cancellationToken.ThrowIfCancellationRequested();
@@ -122,11 +130,16 @@ namespace Nictoarch.Modelling.Core.Spec
                             {
                                 List<Entity> newEntities = element.entities.GetEntities(data);
                                 entities.AddRange(newEntities);
+                                this.OnTrace?.Invoke($"Got entities:\n" + JToken.FromObject(newEntities).ToIndentedString());
                             }
                             catch (Exception ex)
                             {
                                 throw new Exception("Failed to get Entities from the element: " + ex.Message, ex);
                             }
+                        }
+                        else
+                        {
+                            this.OnTrace?.Invoke($"No entities section");
                         }
 
                         cancellationToken.ThrowIfCancellationRequested();
@@ -136,19 +149,24 @@ namespace Nictoarch.Modelling.Core.Spec
                             JToken newInvalids = element.invalid.Eval(data, "invalid");
                             switch (newInvalids.Type)
                             {
-                                case JTokenType.Undefined:
-                                case JTokenType.Null:
-                                    break;
-                                case JTokenType.Array:
-                                    invalidObjects.AddRange(((JArray)newInvalids).ChildrenTokens);
-                                    break;
-                                case JTokenType.Object:
-                                case JTokenType.String:
-                                    invalidObjects.Add(newInvalids);
-                                    break;
-                                default:
-                                    throw new Exception("Unexpected token type for Invalid: " + newInvalids.Type);
+                            case JTokenType.Undefined:
+                            case JTokenType.Null:
+                                break;
+                            case JTokenType.Array:
+                                invalidObjects.AddRange(((JArray)newInvalids).ChildrenTokens);
+                                break;
+                            case JTokenType.Object:
+                            case JTokenType.String:
+                                invalidObjects.Add(newInvalids);
+                                break;
+                            default:
+                                throw new Exception("Unexpected token type for Invalid: " + newInvalids.Type);
                             }
+                            this.OnTrace?.Invoke($"Got invalids:\n" + newInvalids.ToIndentedString());
+                        }
+                        else
+                        {
+                            this.OnTrace?.Invoke($"No invalids section");
                         }
                     }
                 }
@@ -156,12 +174,5 @@ namespace Nictoarch.Modelling.Core.Spec
 
             return new Model(this.m_spec.name, entities, links, invalidObjects);
         }
-
-        /*
-        private static JToken EvalJsonata(JsonataQuery query, JToken data, string queryLabel)
-        {
-
-        }
-        */
     }
 }

@@ -180,10 +180,30 @@ namespace Nictoarch.Modelling.App
             s_logger.Info("Reading model spec file " + specFile);
             ModelSpec modelSpec = ModelSpec.LoadFromFile(specFile, s_registry);
 
-            s_logger.Info("Retrieving model " + modelSpec.Name);
-            Model model = await modelSpec.GetModelAsync();
-            s_logger.Info($"Got {model.entities?.Count ?? 0} entities, and {model.links?.Count ?? 0} links. Invalid objects count: {model.invalid_objects?.Count}");
+            Model model;
 
+            //TODO: use cli args to specify tracing file
+            using (StreamWriter traceFile = File.CreateText("./trace.txt"))
+            {
+                modelSpec.OnTrace += (string line) => {
+                    traceFile.WriteLine("====");
+                    traceFile.WriteLine(line);
+                };
+
+                s_logger.Info("Retrieving model " + modelSpec.Name);
+                try
+                {
+                    model = await modelSpec.GetModelAsync();
+                }
+                catch (Exception ex)
+                {
+                    traceFile.WriteLine("====");
+                    traceFile.WriteLine(ex.Message);
+                    throw;
+                }
+                s_logger.Info($"Got {model.entities?.Count ?? 0} entities, and {model.links?.Count ?? 0} links. Invalid objects count: {model.invalid_objects?.Count}");
+
+            }
             return model;
         }
 

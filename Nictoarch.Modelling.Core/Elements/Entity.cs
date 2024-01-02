@@ -14,6 +14,7 @@ namespace Nictoarch.Modelling.Core.Elements
         public string domain_id { get; set; } = default!;
         public string semantic_id { get; set; } = default!;
         public string display_name { get; set; } = default!;
+        public Dictionary<string, object>? properties { get; set; } = null;
 
         public void Validate()
         {

@@ -77,7 +77,13 @@ data:
     elements:
       - extract:
           query: |
-            SELECT t.table_schema, t.table_name, c.column_name, c.column_default, c.data_type, c.is_nullable, c.character_maximum_length
+            SELECT 
+                CONCAT(t.table_schema, '.', t.table_name) as full_name, 
+                c.column_name, 
+                c.column_default, 
+                c.data_type, 
+                c.is_nullable, 
+                c.character_maximum_length
             FROM information_schema.tables t
             INNER JOIN information_schema.columns c 
                 ON c.table_catalog = t.table_catalog 
@@ -85,20 +91,29 @@ data:
                 AND c.table_name = t.table_name
             WHERE t.table_type = 'BASE TABLE'
                 AND t.table_schema = 'public'
-        entities: 
-#  - source:
-#      type: db
-#      db_connection: NpgsqlConnection   #name of DbConnection descendant class
-#      connection_string: "Server=127.0.0.1;Port=5432;Database=myDataBase;User Id=myUsername;Password=myPassword;"
-#    elements:
-#      - extract:
-#          query: |
-#            SELECT t.table_schema, t.table_name, c.column_name, c.column_default, c.data_type, c.is_nullable, c.character_maximum_length
-#            FROM information_schema.tables t
-#            INNER JOIN information_schema.columns c 
-#                ON c.table_catalog = t.table_catalog 
-#                AND c.table_schema = t.table_schema
-#                AND c.table_name = t.table_name
-#            WHERE t.table_type = 'BASE TABLE'
-#                AND t.table_schema = 'public'
-#        entities: 
+        entities: |
+            $${
+                full_name: $.{
+                    "column_name": `column_name`,
+                    "data_type": `data_type`,
+                    "is_nullable": `is_nullable`,
+                    "column_default": `column_default`,
+                    "character_maximum_length": `character_maximum_length`
+                }
+            }
+            ~> $each(
+                function($v, $k) {
+                    {
+                        "type": "table",
+                        "semantic_id": $k,
+                        "properties": $v{
+                            column_name: {
+                                "type": data_type,
+                                "nullable": is_nullable,
+                                "default": column_default,
+                                "character_maximum_length": character_maximum_length
+                            }
+                        }
+                    }
+                }
+            )

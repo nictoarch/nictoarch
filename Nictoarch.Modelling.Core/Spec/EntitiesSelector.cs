@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Jsonata.Net.Native.Json;
 using Jsonata.Net.Native;
 using Nictoarch.Modelling.Core.Elements;
+using Nictoarch.Modelling.Core.Jsonata;
+using System.Collections;
 
 namespace Nictoarch.Modelling.Core.Spec
 {
@@ -55,30 +57,36 @@ namespace Nictoarch.Modelling.Core.Spec
 
         private Entity ToEntity(JToken token)
         {
-            if (token.Type != JTokenType.Object)
+            try
             {
-                throw new Exception($"Attemptiong to convert a JSON {token.Type} to Entity. Should be a JSON Object");
+                if (token.Type != JTokenType.Object)
+                {
+                    throw new Exception($"Attemptiong to convert a JSON {token.Type} to Entity. Should be a JSON Object");
+                }
+
+                JObject obj = (JObject)token;
+                string type = obj.GetString(nameof(Entity.type));
+                string semanticId = obj.GetString(nameof(Entity.semantic_id));
+                string domainId = obj.GetString(nameof(Entity.domain_id), semanticId);
+                string displayName = obj.GetString(nameof(Entity.display_name), semanticId);
+                Entity entity = new Entity() {
+                    type = type,
+                    semantic_id = semanticId,
+                    domain_id = domainId,
+                    display_name = displayName,
+                };
+                if (obj.Properties.TryGetValue(nameof(Entity.properties), out JToken? propsToken))
+                {
+                    entity.properties = propsToken.ToObject<Dictionary<string, object>>();
+                }
+                //TODO: check unused tokens?
+                entity.Validate();
+                return entity;
             }
-            JObject obj = (JObject)token;
-            if (!obj.Keys.Contains(nameof(Entity.type)))
+            catch (Exception ex)
             {
-                throw new Exception($"Entity selector missing required property '{nameof(Entity.type)}':\n{token.ToIndentedString()}");
+                throw new Exception($"Failed to convert JSON to Entity: {ex.Message}.\n----\n{token.ToIndentedString()}", ex);
             }
-            if (!obj.Properties.TryGetValue(nameof(Entity.semantic_id), out JToken? semanticIdToken))
-            {
-                throw new Exception($"Entity selector missing required property '{nameof(Entity.semantic_id)}':\n{token.ToIndentedString()}");
-            }
-            if (!obj.Keys.Contains(nameof(Entity.domain_id)))
-            {
-                obj.Add(nameof(Entity.domain_id), semanticIdToken);
-            }
-            if (!obj.Keys.Contains(nameof(Entity.display_name))) 
-            {
-                obj.Add(nameof(Entity.display_name), semanticIdToken);
-            }
-            Entity entity = obj.ToObject<Entity>();
-            entity.Validate();
-            return entity;
         }
     }
 
@@ -88,6 +96,7 @@ namespace Nictoarch.Modelling.Core.Spec
         [Required] public JsonataQuery semantic_id { get; set; } = default!;
         public JsonataQuery? domain_id { get; set; }
         public JsonataQuery? display_name { get; set; }
+        public JsonataQuery? properties { get; set; }
 
         public override List<Entity> GetEntities(JToken extractedData)
         {
@@ -124,6 +133,13 @@ namespace Nictoarch.Modelling.Core.Spec
                 semantic_id = semanticIdValue,
                 display_name = displayNameValue
             };
+
+            if (this.properties != null)
+            {
+                JToken propsToken = this.properties.Eval(resource, nameof(this.properties));
+                entity.properties = propsToken.ToObject<Dictionary<string, object>>();
+            }
+
             entity.Validate();
             return entity;
         }
