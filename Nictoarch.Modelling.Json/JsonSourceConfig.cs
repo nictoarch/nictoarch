@@ -1,31 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
-using Jsonata.Net.Native;
-using Nictoarch.Modelling.Core.Yaml;
-using YamlDotNet.Core;
-using YamlDotNet.Core.Events;
+using Nictoarch.Modelling.Core.Spec;
 
 namespace Nictoarch.Modelling.Json
 {
-    public sealed class ProviderConfig
+    public sealed class JsonSourceConfig: SourceConfigBase
     {
-        public enum ESourceTransform
-        {
-            none,
-            xml2json
-        }
-
         public abstract class Auth
         {
             [Required] public string type { get; set; } = default!;
 
             internal abstract AuthenticationHeaderValue? CreateHeader();
+
+            //used for short form "auth: none"
+            public static Auth Parse(string v)
+            {
+                if (v == NoneAuth.TYPE)
+                {
+                    return new NoneAuth();
+                }
+                else
+                {
+                    throw new ArgumentException("Unexpected value " + v);
+                }
+            }
         }
 
         public sealed class NoneAuth : Auth
@@ -54,8 +54,7 @@ namespace Nictoarch.Modelling.Json
             }
         }
 
-        [Required] public string source { get; set; } = default!;
-        [Required] public ESourceTransform source_transform { get; set; } = ESourceTransform.none;
+        [Required] public string location { get; set; } = default!;
         public Auth? auth { get; set; }
     }
 }

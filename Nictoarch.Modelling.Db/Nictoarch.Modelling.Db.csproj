@@ -11,7 +11,13 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Jsonata.Net.Native" Version="2.4.2" />
+	  <PackageReference Include="MySqlConnector" Version="2.3.3" />
+	  <PackageReference Include="Npgsql" Version="8.0.1" />
+	  <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
 	</ItemGroup>
-	
+
+	<ItemGroup>
+		<ProjectReference Include="..\Nictoarch.Modelling.Core\Nictoarch.Modelling.Core.csproj" />
+	</ItemGroup>
+
 </Project>

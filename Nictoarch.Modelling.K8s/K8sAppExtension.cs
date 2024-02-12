@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Jsonata.Net.Native.Json;
 using k8s;
 using Nictoarch.Modelling.Core.AppSupport;
-using Nictoarch.Modelling.K8s.Spec;
 using NLog;
 
 namespace Nictoarch.Modelling.K8s
@@ -51,10 +50,11 @@ namespace Nictoarch.Modelling.K8s
                 this.m_logger.Trace("Using config file at " + configFileName);
             }
 
-            KubernetesClientConfiguration config = K8sClient.GetConfiguration(ProviderConfig.ConnectViaType.config_file, configFileName);
+            KubernetesClientConfiguration config = K8sClient.GetConfiguration(configFileName);
             using (K8sClient client = new K8sClient(config))
             {
-                IReadOnlyList<ApiInfo> apis = await client.GetApiInfosCached(CancellationToken.None);
+                await client.InitAsync(CancellationToken.None);
+                IReadOnlyList<ApiInfo> apis = client.ApiInfos;
                 if (showDetails)
                 {
                     JToken result = JToken.FromObject(apis);

@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nictoarch.Modelling.Json", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nictoarch.Modelling.App", "Nictoarch.Modelling.App\Nictoarch.Modelling.App.csproj", "{FC79F1B9-367E-4589-B0C2-CB67D9B2C77A}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nictoarch.Modelling.Db", "Nictoarch.Modelling.Db\Nictoarch.Modelling.Db.csproj", "{933993A8-8C55-4B13-8B63-43F80899F09D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{FC79F1B9-367E-4589-B0C2-CB67D9B2C77A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FC79F1B9-367E-4589-B0C2-CB67D9B2C77A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FC79F1B9-367E-4589-B0C2-CB67D9B2C77A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{933993A8-8C55-4B13-8B63-43F80899F09D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{933993A8-8C55-4B13-8B63-43F80899F09D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{933993A8-8C55-4B13-8B63-43F80899F09D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{933993A8-8C55-4B13-8B63-43F80899F09D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

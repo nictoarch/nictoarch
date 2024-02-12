@@ -20,12 +20,13 @@ using k8s;
 using k8s.Authentication;
 using k8s.Autorest;
 using k8s.Exceptions;
-using Nictoarch.Modelling.K8s.Spec;
+using NLog;
 
 namespace Nictoarch.Modelling.K8s
 {
     internal sealed class K8sClient: IDisposable
     {
+        private readonly Logger m_logger = LogManager.GetCurrentClassLogger();
         private readonly SocketsHttpHandler m_httpHandler;
         private readonly JsonSerializerOptions m_jsonSerializerOptions;
         private readonly bool m_disableHttp2;
@@ -34,42 +35,20 @@ namespace Nictoarch.Modelling.K8s
         private readonly string m_tlsServerName;
         private readonly ServiceClientCredentials m_clientCredentials;
 
-        private readonly object m_apiInfosLock = new object();
         private IReadOnlyList<ApiInfo>? m_apiInfos = null;
 
-        internal static KubernetesClientConfiguration GetConfiguration(ProviderConfig.ConnectViaType connectVia, string? configFile, double? httpClientTimeoutSeconds = null)
+        public IReadOnlyList<ApiInfo> ApiInfos => this.m_apiInfos ?? throw new Exception($"Please call {nameof(this.InitAsync)}() before accessing {nameof(this.ApiInfos)}");
+
+        internal static KubernetesClientConfiguration GetConfiguration(string? configFile, double? httpClientTimeoutSeconds = null)
         {
             KubernetesClientConfiguration config;
-            switch (connectVia)
+            if (configFile != null)
             {
-            case ProviderConfig.ConnectViaType.auto:
-                if (KubernetesClientConfiguration.IsInCluster())
-                {
-                    config = KubernetesClientConfiguration.InClusterConfig();
-                }
-                else
-                {
-                    config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
-                }
-                break;
-
-            case ProviderConfig.ConnectViaType.config_file:
-                if (configFile != null)
-                {
-                    config = KubernetesClientConfiguration.BuildConfigFromConfigFile(configFile);
-                }
-                else
-                {
-                    config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
-                }
-                break;
-
-            case ProviderConfig.ConnectViaType.cluster:
-                config = KubernetesClientConfiguration.InClusterConfig();
-                break;
-
-            default:
-                throw new Exception("Unexpected connect via " + connectVia);
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile(configFile);
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
             }
 
             if (httpClientTimeoutSeconds != null)
@@ -147,21 +126,24 @@ namespace Nictoarch.Modelling.K8s
             };
         }
 
-        //see https://iximiuz.com/en/posts/kubernetes-api-structure-and-terminology/
-        internal async Task<IReadOnlyList<JToken>> GetResources(string? apiGroup, string resourceKind, string? @namespace, string? labelSelector, CancellationToken cancellationToken)
+        internal async Task InitAsync(CancellationToken cancellationToken)
         {
-            IReadOnlyList<ApiInfo> apis = await this.GetApiInfosCached(cancellationToken);
+            this.m_apiInfos = await this.RequestApiInfos(cancellationToken);
+        }
 
+        //see https://iximiuz.com/en/posts/kubernetes-api-structure-and-terminology/
+        internal async Task<JArray> GetResources(string? apiGroup, string resourceKind, string? @namespace, string? labelSelector, CancellationToken cancellationToken)
+        {
             //TODO: use proper way to get plural names, but it looks rather ok for now
             string resourcePlural;
             string resourceSingular;
 
             //get singular/plural and api group
             {
-                ApiInfo? resourceInfo = apis.FirstOrDefault(a => a.resource_singular == resourceKind);
+                ApiInfo? resourceInfo = this.ApiInfos.FirstOrDefault(a => a.resource_singular == resourceKind);
                 if (resourceInfo == null)
                 {
-                    resourceInfo = apis.FirstOrDefault(a => a.resource_plural == resourceKind);
+                    resourceInfo = this.ApiInfos.FirstOrDefault(a => a.resource_plural == resourceKind);
                 }
 
                 if (resourceInfo == null)
@@ -225,23 +207,7 @@ namespace Nictoarch.Modelling.K8s
             }
 
             JArray resultList = (JArray)resultObj.Properties["items"];
-            return resultList.ChildrenTokens;
-        }
-
-        internal async Task<IReadOnlyList<ApiInfo>> GetApiInfosCached(CancellationToken cancellationToken)
-        {
-            if (this.m_apiInfos == null)
-            {
-                IReadOnlyList<ApiInfo> apiInfos = await this.RequestApiInfos(cancellationToken);
-                lock (this.m_apiInfosLock)
-                {
-                    if (this.m_apiInfos == null)
-                    {
-                        this.m_apiInfos = apiInfos;
-                    }
-                }
-            }
-            return this.m_apiInfos;
+            return resultList;
         }
 
         private async Task<IReadOnlyList<ApiInfo>> RequestApiInfos(CancellationToken cancellationToken)
@@ -304,7 +270,6 @@ namespace Nictoarch.Modelling.K8s
                 RequestUri = new Uri(this.m_baseUri, relativeUri),
             })
             {
-
                 if (!this.m_disableHttp2)
                 {
                     httpRequest.Version = HttpVersion.Version20;
@@ -325,6 +290,8 @@ namespace Nictoarch.Modelling.K8s
                     httpRequest.Content = new StringContent(requestContent, Encoding.UTF8);
                     httpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json; charset=utf-8");
                 }
+
+                //this.m_logger.Trace($"{httpRequest.Method} {httpRequest.RequestUri} ({httpRequest.Version}, {httpRequest.Content?.Headers.ContentType}) ");
 
                 return SendRequestRaw(httpRequest, cancellationToken);
             }

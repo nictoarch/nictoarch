@@ -24,6 +24,7 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\Nictoarch.Common\Nictoarch.Common.csproj" />
 	  <ProjectReference Include="..\Nictoarch.Modelling.Core\Nictoarch.Modelling.Core.csproj" />
+	  <ProjectReference Include="..\Nictoarch.Modelling.Db\Nictoarch.Modelling.Db.csproj" />
 	  <ProjectReference Include="..\Nictoarch.Modelling.Json\Nictoarch.Modelling.Json.csproj" />
 	  <ProjectReference Include="..\Nictoarch.Modelling.K8s\Nictoarch.Modelling.K8s.csproj" />
 	</ItemGroup>
