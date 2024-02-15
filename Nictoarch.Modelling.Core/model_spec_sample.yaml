@@ -64,14 +64,15 @@ data:
           }
   - source:
       type: db
-      connection: NpgsqlConnection   #name of DbConnection descendant class
+      connection: NpgsqlConnection   #name of DbConnection descendant class, eg SqlConnection (MSSWL) or MySqlConnection
       #connection_string: "Server=127.0.0.1;Port=5432;Database=myDataBase;User Id=myUsername;Password=myPassword;"
       connection_args:
-        Server: !inplace secret.yaml#db.host
+        Server: !inplace secret.yaml#db.host   
         Port: !inplace secret.yaml#db.port
         Database: !inplace secret.yaml#db.database
         "User Id": !inplace secret.yaml#db.user
         Password: !inplace secret.yaml#db.pass
+        #also possible to use `!env MY_ENV_VARIABLE`
     elements:
       - extract:
           query: |
