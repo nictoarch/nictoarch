@@ -59,6 +59,11 @@ namespace Nictoarch.Modelling.Core.Spec
                     new YamlnplaceNodeDeserializer(basePath ?? Directory.GetCurrentDirectory()),
                     where: syntax => syntax.OnTop()
                 )
+                .WithTagMapping(YamEnvNodeDeserializer.TAG, typeof(string))     // tag needs to be registered so that validation passes
+                .WithNodeDeserializer(
+                    new YamEnvNodeDeserializer(),
+                    where: syntax => syntax.OnTop()
+                )
 
                 //see https://github.com/aaubry/YamlDotNet/wiki/Deserialization---Type-Discriminators#determining-type-based-on-the-value-of-a-key
                 .WithTypeDiscriminatingNodeDeserializer(options => {
