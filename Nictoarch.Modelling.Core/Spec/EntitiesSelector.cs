@@ -55,6 +55,13 @@ namespace Nictoarch.Modelling.Core.Spec
             return result;
         }
 
+        private static readonly string[] ENTITY_KEYS = [
+            nameof(Entity.type), 
+            nameof(Entity.id), 
+            nameof(Entity.display_name), 
+            nameof(Entity.properties)
+        ];
+
         private Entity ToEntity(JToken token)
         {
             try
@@ -66,20 +73,24 @@ namespace Nictoarch.Modelling.Core.Spec
 
                 JObject obj = (JObject)token;
                 string type = obj.GetString(nameof(Entity.type));
-                string semanticId = obj.GetString(nameof(Entity.semantic_id));
-                string domainId = obj.GetString(nameof(Entity.domain_id), semanticId);
-                string displayName = obj.GetString(nameof(Entity.display_name), semanticId);
+                string id = obj.GetString(nameof(Entity.id));
+                string? displayName = obj.GetStringNullable(nameof(Entity.display_name));
                 Entity entity = new Entity() {
                     type = type,
-                    semantic_id = semanticId,
-                    domain_id = domainId,
+                    id = id,
                     display_name = displayName,
                 };
                 if (obj.Properties.TryGetValue(nameof(Entity.properties), out JToken? propsToken))
                 {
                     entity.properties = propsToken.ToObject<Dictionary<string, object>>();
                 }
-                //TODO: check unused tokens?
+
+                IEnumerable<string> extraKeys = obj.Keys.Except(ENTITY_KEYS);
+                if (extraKeys.Any())
+                {
+                    throw new Exception($"Unexpected Entity keys: {String.Join(", ", extraKeys)}. Known keys are: {String.Join(", ", ENTITY_KEYS)}");
+                }
+
                 entity.Validate();
                 return entity;
             }
@@ -93,8 +104,7 @@ namespace Nictoarch.Modelling.Core.Spec
     public sealed class EntitiesSelectorQueryPerField : EntitiesSelectorBase
     {
         [Required] public JsonataQuery type { get; set; } = default!;
-        [Required] public JsonataQuery semantic_id { get; set; } = default!;
-        public JsonataQuery? domain_id { get; set; }
+        [Required] public JsonataQuery id { get; set; } = default!;
         public JsonataQuery? display_name { get; set; }
         public JsonataQuery? properties { get; set; }
 
@@ -123,14 +133,12 @@ namespace Nictoarch.Modelling.Core.Spec
         private Entity ToEntity(JToken resource)
         {
             string typeValue = this.EvaluateValueExpression(resource, this.type, nameof(this.type));
-            string semanticIdValue = this.EvaluateValueExpression(resource, this.semantic_id, nameof(this.semantic_id));
-            string domainIdValue = this.domain_id != null ? this.EvaluateValueExpression(resource, this.domain_id, nameof(this.domain_id)) : semanticIdValue;
-            string displayNameValue = this.display_name != null ? this.EvaluateValueExpression(resource, this.display_name, nameof(this.display_name)) : semanticIdValue;
+            string idValue = this.EvaluateValueExpression(resource, this.id, nameof(this.id));
+            string? displayNameValue = this.display_name != null ? this.EvaluateValueExpression(resource, this.display_name, nameof(this.display_name)) : null;
 
             Entity entity = new Entity() {
                 type = typeValue,
-                domain_id = domainIdValue,
-                semantic_id = semanticIdValue,
+                id = idValue,
                 display_name = displayNameValue
             };
 

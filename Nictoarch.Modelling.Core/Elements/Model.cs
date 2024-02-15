@@ -41,9 +41,9 @@ namespace Nictoarch.Modelling.Core.Elements
                 HashSet<string> entityIds = new HashSet<string>(this.entities.Count);
                 foreach (Entity entity in this.entities)
                 {
-                    if (!entityIds.Add(entity.semantic_id))
+                    if (!entityIds.Add(entity.id))
                     {
-                        throw new Exception($"Found entites with same {nameof(Entity.semantic_id)} ('{entity.semantic_id}')");
+                        throw new Exception($"Found entites with same {nameof(Entity.id)} ('{entity.id}')");
                     }
                 }
             }
@@ -53,9 +53,9 @@ namespace Nictoarch.Modelling.Core.Elements
                 HashSet<string> linkIds = new HashSet<string>(this.links.Count);
                 foreach (Link link in this.links)
                 {
-                    if (!linkIds.Add(link.semantic_id))
+                    if (!linkIds.Add(link.id))
                     {
-                        throw new Exception($"Found links with same {nameof(Entity.semantic_id)} ('{link.semantic_id}')");
+                        throw new Exception($"Found links with same {nameof(Entity.id)} ('{link.id}')");
                     }
                 }
             }

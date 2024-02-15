@@ -11,22 +11,29 @@ namespace Nictoarch.Modelling.Core.Elements
     public sealed class Entity
     {
         public string type { get; set; } = default!;
-        public string domain_id { get; set; } = default!;
-        public string semantic_id { get; set; } = default!;
-        public string display_name { get; set; } = default!;
+        public string id { get; set; } = default!;
+        public string? display_name { get; set; }
         public Dictionary<string, object>? properties { get; set; } = null;
 
         public void Validate()
         {
             ArgumentException.ThrowIfNullOrEmpty(this.type, nameof(this.type));
-            ArgumentException.ThrowIfNullOrEmpty(this.domain_id, nameof(this.domain_id));
-            ArgumentException.ThrowIfNullOrEmpty(this.semantic_id, nameof(this.semantic_id));
-            ArgumentException.ThrowIfNullOrEmpty(this.display_name, nameof(this.display_name));
+            ArgumentException.ThrowIfNullOrEmpty(this.id, nameof(this.id));
         }
 
         public JObject ToJson()
         {
-            return (JObject)JToken.FromObject(this);
+            JObject result = new JObject();
+            result.Add(nameof(this.id), new JValue(this.id));
+            if (this.display_name != null)
+            {
+                result.Add(nameof(this.display_name), new JValue(this.display_name));
+            }
+            if (this.properties != null)
+            {
+                result.Add(nameof(this.properties), JToken.FromObject(this.properties));
+            }
+            return result;
         }
 
         public override string ToString()

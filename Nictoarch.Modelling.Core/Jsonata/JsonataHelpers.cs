@@ -38,5 +38,21 @@ namespace Nictoarch.Modelling.Core.Jsonata
 
             return (string)prop;
         }
+
+        internal static string? GetStringNullable(this JObject obj, string name)
+        {
+            if (!obj.Properties.TryGetValue(name, out JToken? prop))
+            {
+                return null;
+            }
+
+            if (prop.Type != JTokenType.String)
+            {
+                throw new Exception($"Property '{name}' expected to be a String but it is {prop.Type}");
+            }
+
+            return (string)prop;
+        }
+
     }
 }

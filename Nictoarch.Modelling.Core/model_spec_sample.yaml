@@ -16,8 +16,7 @@ data:
         entities: |
           **[_type='object' and `service-name`].{
                 'type': 'service',
-                'domain_id': `id`,
-                'semantic_id': `service-name` & '@' & `service-group`,
+                'id': `service-name` & '@' & `service-group`,
                 'display_name': `service-name` & '@' & `service-group`
           }[]
         invalid: |
@@ -51,8 +50,7 @@ data:
         # element should contain either 'entities' (, 'links') or 'invalid' section
         entities: # entities - may specify explicitly how to get each part of entity
           type: "'service'"
-          semantic_id: "metadata.name"
-          domain_id: "metadata.namespace & ':' & metadata.name"
+          id: "metadata.name"
           display_name: "metadata.labels.appname & ' v' & metadata.labels.`app.kubernetes.io/version`"
       - extract: 
           resource_kind: statefulset
@@ -61,9 +59,8 @@ data:
         entities: |
           $.{
             "type": "statefulset",
-            "semantic_id": metadata.name,
-            "domain_id": metadata.uid,
-            /* "display_name": metadata.name  -- will use semantic_id for domain_id or display_name if tose are not specified */
+            "id": metadata.name,
+            /* "display_name": metadata.name  -- optional */
           }
   - source:
       type: db
@@ -106,7 +103,7 @@ data:
                 function($v, $k) {
                     {
                         "type": "table",
-                        "semantic_id": $k,
+                        "id": $k,
                         "properties": $v{
                             column_name: {
                                 "type": data_type,

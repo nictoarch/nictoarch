@@ -38,10 +38,10 @@ namespace Nictoarch.Modelling.Core
         public static ModelComparison Build(Model refModel, Model checkModel)
         {
             List<Entity> entitiesNotInCheck = refModel.entities
-                .Where(re => !checkModel.entities.Any(ce => ce.semantic_id == re.semantic_id))
+                .Where(re => !checkModel.entities.Any(ce => ce.id == re.id))
                 .ToList();
             List<Entity> entitiesNotInRef = checkModel.entities
-                .Where(ce => !refModel.entities.Any(re => ce.semantic_id == re.semantic_id))
+                .Where(ce => !refModel.entities.Any(re => ce.id == re.id))
                 .ToList();
 
 
