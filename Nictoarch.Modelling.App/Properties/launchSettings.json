@@ -17,7 +17,7 @@
     },
     "Profile 1": {
       "commandName": "Project",
-      "commandLineArgs": "e f:\\Projects\\_Small_Projects\\activebc.infrastructure.statusservice\\models\\aaa.yaml  -o f:\\Projects\\_Small_Projects\\activebc.infrastructure.statusservice\\models\\aaa.model.json"
+      "commandLineArgs": "e f:\\Projects\\_Small_Projects\\activebc.infrastructure.statusservice\\models\\cpl.infra.spec.yaml  -o http://192.168.8.222:8080/api/data/infrastructure/cpl"
     }
   }
 }

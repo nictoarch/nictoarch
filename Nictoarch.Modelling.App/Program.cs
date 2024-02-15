@@ -1,6 +1,9 @@
 ﻿using System;
 using System.CommandLine;
 using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Nictoarch.Common;
@@ -31,7 +34,7 @@ namespace Nictoarch.Modelling.App
                 exportModelCommand.AddAlias("e");
                 exportModelCommand.AddAlias("extract");
                 Argument<string> specArg = new Argument<string>("spec", "Path to spec yaml file");
-                Option<string?> outputOpt = new Option<string?>(new string[] { "--out", "-o" }, () => null, "Output file name");
+                Option<string?> outputOpt = new Option<string?>(new string[] { "--out", "-o" }, () => null, "Output file name or url");
                 exportModelCommand.Add(specArg);
                 exportModelCommand.Add(outputOpt);
                 exportModelCommand.SetHandler(
@@ -85,7 +88,27 @@ namespace Nictoarch.Modelling.App
 
             Model model = await ExtractModel(specFile);
 
-            await SaveModelToFile(model, outputFile);
+            Uri pushUrl;
+            try
+            {
+                pushUrl = new Uri(outputFile);
+            }
+            catch (Exception)
+            {
+                //not an URI
+                await SaveModelToFile(model, outputFile);
+                return;
+            }
+
+            switch (pushUrl.Scheme)
+            {
+            case "http":
+            case "https":
+                await PushModelToHttp(model, pushUrl);
+                break;
+            default:
+                throw new Exception($"Unexpected URI shema '{pushUrl.Scheme}'");
+            }
         }
 
         private static async Task CompareModelsCommand(
@@ -166,6 +189,32 @@ namespace Nictoarch.Modelling.App
             else
             {
                 throw new Exception("Either model file or spec file should be specified");
+            }
+        }
+
+        private static async Task PushModelToHttp(Model model, Uri pushUrl)
+        {
+            s_logger.Info("Pushing model to " + pushUrl);
+            string modelJson = model.ToJson().ToFlatString();
+            using (HttpContent content = new StringContent(modelJson, new MediaTypeHeaderValue("application/json")))
+            using (HttpClient httpClient = new HttpClient())
+            {
+                HttpResponseMessage response = await httpClient.PostAsync(pushUrl, content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    string responseMsg;
+                    try
+                    {
+                        responseMsg = await response.Content.ReadAsStringAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        responseMsg = $"(Failed to read response message: {ex.Message})";
+                    }
+                    throw new Exception(responseMsg);
+                }
+                
+                s_logger.Info("done");
             }
         }
 
