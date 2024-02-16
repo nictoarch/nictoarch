@@ -25,7 +25,10 @@ namespace Nictoarch.Modelling.Db
                 }
                 else
                 {
-                    this.connection_string = String.Join(";", this.connection_args.Select(p => $"{p.Key}={p.Value}"));
+                    IEnumerable<string> args = this.connection_args
+                        .Where(p => !String.IsNullOrWhiteSpace(p.Value?.ToString()))
+                        .Select(p => $"{p.Key}={p.Value}");
+                    this.connection_string = String.Join(";", args);
                 }
             }
             else if (this.connection_args != null)

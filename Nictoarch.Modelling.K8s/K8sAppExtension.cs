@@ -50,7 +50,7 @@ namespace Nictoarch.Modelling.K8s
                 this.m_logger.Trace("Using config file at " + configFileName);
             }
 
-            KubernetesClientConfiguration config = K8sClient.GetConfiguration(configFileName);
+            KubernetesClientConfiguration config = K8sClient.GetConfiguration(false, configFileName);
             using (K8sClient client = new K8sClient(config))
             {
                 await client.InitAsync(CancellationToken.None);

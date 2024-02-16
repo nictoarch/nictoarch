@@ -297,7 +297,7 @@ namespace Nictoarch.Modelling.K8s
 
                 //this.m_logger.Trace($"{httpRequest.Method} {httpRequest.RequestUri} ({httpRequest.Version}, {httpRequest.Content?.Headers.ContentType}) ");
 
-                return SendRequestRaw(httpRequest, cancellationToken);
+                return this.SendRequestRaw(httpRequest, cancellationToken);
             }
         }
 

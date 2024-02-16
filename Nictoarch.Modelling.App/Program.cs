@@ -137,7 +137,7 @@ namespace Nictoarch.Modelling.App
             }
 
             s_logger.Trace("Building diff");
-            ModelComparison diff = ModelComparison.Build(refModel, checkModel);
+            ModelComparison diff = new ModelComparison(refModel, checkModel);
 
             string? diffMessage;
             if (diff.ModelsAreSame())
@@ -147,7 +147,12 @@ namespace Nictoarch.Modelling.App
             }
             else
             {
-                diffMessage = $"Models differ! Got {diff.entities_not_in_check.Count} entitites not in CHECK model, {diff.entities_not_in_ref.Count} entites not in REF model";
+                diffMessage = 
+@$"Models differ! 
+Got {diff.entities_not_in_check_count} entitites not in CHECK model, 
+{diff.entities_not_in_ref_count} entites not in REF model, 
+{diff.entities_different_properties_count} entities with different properties";
+
                 s_logger.Trace(diffMessage);
             }
 
