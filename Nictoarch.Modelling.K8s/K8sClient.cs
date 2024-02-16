@@ -39,10 +39,14 @@ namespace Nictoarch.Modelling.K8s
 
         public IReadOnlyList<ApiInfo> ApiInfos => this.m_apiInfos ?? throw new Exception($"Please call {nameof(this.InitAsync)}() before accessing {nameof(this.ApiInfos)}");
 
-        internal static KubernetesClientConfiguration GetConfiguration(string? configFile, double? httpClientTimeoutSeconds = null)
+        internal static KubernetesClientConfiguration GetConfiguration(bool useClusterConfig, string? configFile, double? httpClientTimeoutSeconds = null)
         {
             KubernetesClientConfiguration config;
-            if (configFile != null)
+            if (useClusterConfig)
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else if (configFile != null)
             {
                 config = KubernetesClientConfiguration.BuildConfigFromConfigFile(configFile);
             }

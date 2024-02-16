@@ -20,7 +20,7 @@ namespace Nictoarch.Modelling.K8s
 
         async Task<ISource> ISourceFactory<K8sSourceConfig, K8sSource, K8sExtractConfig>.GetSource(K8sSourceConfig sourceConfig, CancellationToken cancellationToken)
         {
-            KubernetesClientConfiguration k8sConfig = K8sClient.GetConfiguration(sourceConfig.config_file, sourceConfig.connect_timeout_seconds);
+            KubernetesClientConfiguration k8sConfig = K8sClient.GetConfiguration(sourceConfig.use_cluster_config, sourceConfig.config_file, sourceConfig.connect_timeout_seconds);
             K8sClient client = new K8sClient(k8sConfig);
             await client.InitAsync(cancellationToken);
             K8sSource source = new K8sSource(client);
