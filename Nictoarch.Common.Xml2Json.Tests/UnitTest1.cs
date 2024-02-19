@@ -40,7 +40,7 @@ namespace Nictoarch.Common.Xml2Json.Tests
             Xml2JsonConverter converter = new Xml2JsonConverter();
             JToken convertedXml = converter.Convert(xmlDoc);
             string convertedXmlStr = convertedXml.ToIndentedString();
-            Assert.IsTrue(expectedJson.DeepEquals(convertedXml), "Mismatch, got: \n" + convertedXmlStr);
+            Assert.That(expectedJson.DeepEquals(convertedXml), "Mismatch, got: \n" + convertedXmlStr);
         }
 
         //see https://www.xml.com/pub/a/2006/05/31/converting-between-xml-and-json.html

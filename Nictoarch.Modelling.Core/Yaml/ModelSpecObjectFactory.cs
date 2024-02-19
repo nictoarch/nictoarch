@@ -77,6 +77,26 @@ namespace Nictoarch.Modelling.Core.Yaml
             return this.m_fallback.GetValueType(type);
         }
 
+        void IObjectFactory.ExecuteOnDeserializing(object value)
+        {
+            this.m_fallback.ExecuteOnDeserializing(value);
+        }
+
+        void IObjectFactory.ExecuteOnDeserialized(object value)
+        {
+            this.m_fallback.ExecuteOnDeserialized(value);
+        }
+
+        void IObjectFactory.ExecuteOnSerializing(object value)
+        {
+            this.m_fallback.ExecuteOnSerializing(value);
+        }
+
+        void IObjectFactory.ExecuteOnSerialized(object value)
+        {
+            this.m_fallback.ExecuteOnSerialized(value);
+        }
+
         private sealed class TypeDiscriminator : ITypeDiscriminator
         {
             private readonly ModelSpecObjectFactory m_parent;
