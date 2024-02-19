@@ -50,8 +50,9 @@ namespace Nictoarch.Modelling.Core
 
         public bool ModelsAreSame()
         {
-            return this.entities_not_in_ref.Count == 0
-                && this.entities_not_in_check.Count == 0;
+            return this.entities_not_in_ref_count == 0
+                && this.entities_not_in_check_count == 0
+                && this.entities_different_properties_count == 0;
         }
 
         private sealed class EtitiyPropertiesElementComparer : IEqualityComparer<KeyValuePair<string, object>>

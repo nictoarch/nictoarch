@@ -71,7 +71,7 @@ namespace Nictoarch.Modelling.Core
                         Type extractType = args[2];
                         SourceFactoryWrapper wrapper = new SourceFactoryWrapper(factoryClassType, configType, sourceType, extractType);
                         this.m_factoryWrappers.Add(wrapper.Name, wrapper);
-                        this.m_logger.Trace($"Added sourcce factory '{wrapper.Name}' from {factoryClassType.Name}");
+                        this.m_logger.Trace($"Added source factory '{wrapper.Name}' from {factoryClassType.Name}");
                     }
                 }
             }

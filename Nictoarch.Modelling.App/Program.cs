@@ -48,26 +48,17 @@ namespace Nictoarch.Modelling.App
                 Command compareModelsCommand = new Command("compare-models", "Compare two models");
                 compareModelsCommand.AddAlias("c");
                 compareModelsCommand.AddAlias("compare");
-                Option<string?> refSpecOpt = new Option<string?>("--ref-spec", () => null, "Spec file for REF model");
-                Option<string?> refModelOpt = new Option<string?>("--ref-model", () => null, "Model file for REF model");
-                Option<bool> refFlagOpt = new Option<bool>("--extract-ref-model-even-if-exitst", "Extract REF model from Spec file even if Model file exists (will also overwrite the REF Model file)");
-                Option<string?> checkSpecOpt = new Option<string?>("--check-spec", () => null, "Spec file for CHECK model");
-                Option<string?> checkModelOpt = new Option<string?>("--check-model", () => null, "Model file for CHECK model");
-                Option<bool> checkFlagOpt = new Option<bool>("--extract-check-model-even-if-exitst", "Extract CHECK model from Spec file even if Model file exists (will also overwrite the CHECK Model file)");
-                Option<string?> outputFileOpt = new Option<string?>("--output-file", () => null, "File name to write diff to");
+                Argument<string> refModelArg = new Argument<string>("ref-model", "Model file for REF(erence) model");
+                Argument<string> checkModelArg = new Argument<string>("check-model", "Model file for CHECK model");
+                Option<string?> outputFileOpt = new Option<string?>(new string[] { "--out", "-o" }, () => null, "File name to write diff to");
                 Option<bool> throwOnMismatch = new Option<bool>("--throw-on-mismatch", "Whenever to throw excheption when models differ");
-                compareModelsCommand.Add(refSpecOpt);
-                compareModelsCommand.Add(refModelOpt);
-                compareModelsCommand.Add(refFlagOpt);
-                compareModelsCommand.Add(checkSpecOpt);
-                compareModelsCommand.Add(checkModelOpt);
-                compareModelsCommand.Add(checkFlagOpt);
+                compareModelsCommand.Add(refModelArg);
+                compareModelsCommand.Add(checkModelArg);
                 compareModelsCommand.Add(outputFileOpt);
                 compareModelsCommand.Add(throwOnMismatch);
                 compareModelsCommand.SetHandler(
                     CompareModelsCommand,
-                    refSpecOpt, refModelOpt, refFlagOpt,
-                    checkSpecOpt, checkModelOpt, checkFlagOpt,
+                    refModelArg, checkModelArg,
                     outputFileOpt, throwOnMismatch
                 );
                 rootCommand.AddCommand(compareModelsCommand);
@@ -111,16 +102,12 @@ namespace Nictoarch.Modelling.App
             }
         }
 
-        private static async Task CompareModelsCommand(
-            string? refSpecFile, string? refModelFile, bool extractRefModelEvenIfExists,
-            string? checkSpecFile, string? checkModelFile, bool extractCheckModelEvenIfExists,
-            string? outputDiffFileName, bool throwOnMismatch
-        )
+        private static async Task CompareModelsCommand(string refModelFile, string checkModelFile, string? outputDiffFileName, bool throwOnMismatch)
         {
             Model refModel, checkModel;
             try
             {
-                refModel = await ExtractOrLoadModel(refSpecFile, refModelFile, extractRefModelEvenIfExists);
+                refModel = await LoadModelFromFile(refModelFile);
             }
             catch (Exception ex)
             {
@@ -129,7 +116,7 @@ namespace Nictoarch.Modelling.App
 
             try
             {
-                checkModel = await ExtractOrLoadModel(checkSpecFile, checkModelFile, extractCheckModelEvenIfExists);
+                checkModel = await LoadModelFromFile(checkModelFile);
             }
             catch (Exception ex)
             {
@@ -164,36 +151,6 @@ Got {diff.entities_not_in_check_count} entitites not in CHECK model,
             if (throwOnMismatch && diffMessage != null)
             {
                 throw new Exception(diffMessage);
-            }
-        }
-
-        private static async Task<Model> ExtractOrLoadModel(string? specFile, string? modelFile, bool extractModelEvenWhenExists)
-        {
-            if (specFile != null)
-            {
-                if (modelFile != null 
-                    && !extractModelEvenWhenExists
-                    && File.Exists(modelFile)
-                )
-                {
-                    return await LoadModelFromFile(modelFile);
-                }
-
-                Model model = await ExtractModel(specFile);
-
-                if (modelFile != null)
-                {
-                    await SaveModelToFile(model, modelFile);
-                }
-                return model;
-            }
-            else if (modelFile != null)
-            {
-                return await LoadModelFromFile(modelFile);
-            }
-            else
-            {
-                throw new Exception("Either model file or spec file should be specified");
             }
         }
 
