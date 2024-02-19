@@ -3,13 +3,13 @@ name: docker
 on:
   workflow_dispatch:
     inputs: 
-      publish:
+      do_publish:
         type: boolean
         required: true
         description: "Publish to repo"
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: nictoarch-modelling
+  IMAGE_NAME: nictoarch_modelling
 
 jobs:
   build:
@@ -41,7 +41,6 @@ jobs:
         with:
           context: .
           file: Nictoarch.Modelling.App/Dockerfile
-          push: ${{ inputs.publish }}
-#          tags: nictoarch-modelling:latest
+          push: ${{ inputs.do_publish }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
