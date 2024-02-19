@@ -17,7 +17,13 @@
     },
     "Profile 1": {
       "commandName": "Project",
-      "commandLineArgs": "e f:\\Projects\\_Small_Projects\\activebc.infrastructure.statusservice\\models\\cpl.infra.spec.yaml  -o http://192.168.8.222:8080/api/data/infrastructure/cpl"
+      "commandLineArgs": "e cpl.abcloud-db.spec.yaml -o cpl.abcloud-db.spec.model.json",
+      "workingDirectory": "f:\\Projects\\_Small_Projects\\activebc.infrastructure.statusservice\\models  "
+    },
+    "Profile 2": {
+      "commandName": "Project",
+      "commandLineArgs": "c --ref-spec cpl.abcloud-db.spec.yaml --ref-model cpl.abcloud-db.spec.model.json --check-spec cpl-abtsc.abcloud-db.spec.yaml --check-model cpl-abtsc.abcloud-db.spec.model.json --output-file cpl-abtsc-2-cpl.abcloud-db.diff.json",
+      "workingDirectory": "f:\\Projects\\_Small_Projects\\activebc.infrastructure.statusservice\\models"
     }
   }
 }
