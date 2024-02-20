@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Jsonata.Net.Native.Json;
 using Nictoarch.Common;
@@ -108,7 +109,7 @@ namespace Nictoarch.Modelling.App
             Model refModel, checkModel;
             try
             {
-                refModel = await LoadModelFromFile(refModelFile);
+                refModel = LoadModelFromFile(refModelFile);
             }
             catch (Exception ex)
             {
@@ -117,7 +118,7 @@ namespace Nictoarch.Modelling.App
 
             try
             {
-                checkModel = await LoadModelFromFile(checkModelFile);
+                checkModel = LoadModelFromFile(checkModelFile);
             }
             catch (Exception ex)
             {
@@ -153,12 +154,13 @@ Got {diff.entities_not_in_check_count} entitites not in CHECK model,
             {
                 throw new Exception(diffMessage);
             }
+
         }
 
         private static async Task PushModelToHttp(Model model, Uri pushUrl)
         {
             s_logger.Info("Pushing model to " + pushUrl);
-            string modelJson = model.ToJson().ToFlatString(new SerializationOptions() { SerializeNullProperties = false });
+            string modelJson = model.ToJson().ToFlatString(new SerializationSettings() { SerializeNullProperties = false });
             using (HttpContent content = new StringContent(modelJson, new MediaTypeHeaderValue("application/json")))
             using (HttpClient httpClient = new HttpClient())
             {
@@ -184,7 +186,7 @@ Got {diff.entities_not_in_check_count} entitites not in CHECK model,
         private static Task SaveModelToFile(Model model, string outputFile)
         {
             s_logger.Info("Writing model to " + outputFile);
-            return File.WriteAllTextAsync(outputFile, model.ToJson().ToIndentedString(new SerializationOptions() {SerializeNullProperties = false }));
+            return File.WriteAllTextAsync(outputFile, model.ToJson().ToIndentedString(new SerializationSettings() {SerializeNullProperties = false }));
         }
 
         private static async Task<Model> ExtractModel(string specFile)
@@ -219,21 +221,26 @@ Got {diff.entities_not_in_check_count} entitites not in CHECK model,
             return model;
         }
 
-        private static async Task<Model> LoadModelFromFile(string modelFile)
+        private static Model LoadModelFromFile(string modelFile)
         {
             s_logger.Trace("Loading model from " + modelFile);
             using (Stream stream = File.OpenRead(modelFile))
             {
-                return await Model.FromJson(stream);
+                return Model.FromJson(stream);
             }
         }
 
         private static async Task SaveDiffToFile(ModelComparison diff, string file)
         {
             s_logger.Trace("Saving diff to " + file);
+            JsonSerializerOptions serializerOptions = new JsonSerializerOptions() {
+                WriteIndented = true
+            };
+            serializerOptions.Converters.Add(new JsonStringEnumConverter());
+
             using (Stream stream = File.Create(file))
             {
-                await JsonSerializer.SerializeAsync(stream, diff, new JsonSerializerOptions() { WriteIndented = true });
+                await JsonSerializer.SerializeAsync(stream, diff, serializerOptions);
             }
         }
     }

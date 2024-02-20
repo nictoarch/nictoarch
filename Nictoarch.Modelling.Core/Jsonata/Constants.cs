@@ -9,8 +9,12 @@ namespace Nictoarch.Modelling.Core.Jsonata
 {
     internal static class Constants
     {
-        internal static readonly SerializationOptions NO_NULLS = new SerializationOptions() {
+        internal static readonly SerializationSettings NO_NULLS = new SerializationSettings() {
             SerializeNullProperties = false
+        };
+
+        internal static readonly ToObjectSettings ALLOW_MISSING = new ToObjectSettings() {
+            AllowMissingProperties = true
         };
     }
 }

@@ -96,7 +96,7 @@ namespace Nictoarch.Modelling.Core.Spec
         {
             List<Entity> entities = new List<Entity>();
             List<Link> links = new List<Link>();
-            List<JToken> invalidObjects = new List<JToken>();
+            List<object> invalidObjects = new List<object>();
 
             this.OnTrace?.Invoke("Getting model " + this.Name);
 

@@ -11,13 +11,21 @@ namespace Nictoarch.Modelling.Core.Elements
 {
     public sealed class Model
     {
-        public string name { get; }
+        public string name { get; set; }
 
-        public IReadOnlyList<Entity> entities { get; }
-        public IReadOnlyList<Link> links { get; }
-        public IReadOnlyList<object> invalid_objects { get; }
+        public List<Entity> entities { get; set; }
+        public List<Link> links { get; set; }
+        public List<object> invalid_objects { get; set; }
 
-        public Model(string name, IReadOnlyList<Entity> entities, IReadOnlyList<Link> links, IReadOnlyList<object> invalid_objects)
+        public Model()
+        {
+            this.name = default!;
+            this.entities = default!;
+            this.links = default!;
+            this.invalid_objects = default!;
+        }
+
+        public Model(string name, List<Entity> entities, List<Link> links, List<object> invalid_objects)
         {
             this.name = name ?? throw new ArgumentNullException(nameof(name));
             this.entities = entities ?? throw new ArgumentNullException(nameof(entities));
@@ -104,9 +112,15 @@ namespace Nictoarch.Modelling.Core.Elements
             return this.ToJson().ToIndentedString(Jsonata.Constants.NO_NULLS);
         }
 
-        public static async Task<Model> FromJson(Stream stream)
+        public static Model FromJson(Stream stream)
         {
-            return (await JsonSerializer.DeserializeAsync<Model>(stream))!;
+            JObject modelObj;
+            using (TextReader reader = new StreamReader(stream))
+            {
+                modelObj = (JObject)JToken.Parse(reader);
+            }
+            Model result = modelObj.ToObject<Model>(Jsonata.Constants.ALLOW_MISSING);
+            return result;
         }
     }
 }
