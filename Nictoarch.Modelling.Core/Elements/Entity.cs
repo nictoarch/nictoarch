@@ -56,7 +56,7 @@ namespace Nictoarch.Modelling.Core.Elements
 
         public override string ToString()
         {
-            return this.ToJson().ToIndentedString(Jsonata.Constants.NO);
+            return this.ToJson().ToIndentedString(Jsonata.Constants.NO_NULLS);
         }
     }
 }
