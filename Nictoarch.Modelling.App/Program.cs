@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Jsonata.Net.Native.Json;
 using Nictoarch.Common;
 using Nictoarch.Modelling.Core;
 using Nictoarch.Modelling.Core.AppSupport;
@@ -157,7 +158,7 @@ Got {diff.entities_not_in_check_count} entitites not in CHECK model,
         private static async Task PushModelToHttp(Model model, Uri pushUrl)
         {
             s_logger.Info("Pushing model to " + pushUrl);
-            string modelJson = model.ToJson().ToFlatString();
+            string modelJson = model.ToJson().ToFlatString(new SerializationOptions() { SerializeNullProperties = false });
             using (HttpContent content = new StringContent(modelJson, new MediaTypeHeaderValue("application/json")))
             using (HttpClient httpClient = new HttpClient())
             {
@@ -183,7 +184,7 @@ Got {diff.entities_not_in_check_count} entitites not in CHECK model,
         private static Task SaveModelToFile(Model model, string outputFile)
         {
             s_logger.Info("Writing model to " + outputFile);
-            return File.WriteAllTextAsync(outputFile, model.ToJson().ToIndentedString());
+            return File.WriteAllTextAsync(outputFile, model.ToJson().ToIndentedString(new SerializationOptions() {SerializeNullProperties = false }));
         }
 
         private static async Task<Model> ExtractModel(string specFile)

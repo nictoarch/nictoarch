@@ -38,12 +38,12 @@ namespace Nictoarch.Modelling.Core.Elements
         {
             //entity duplicates
             {
-                HashSet<string> entityIds = new HashSet<string>(this.entities.Count);
+                HashSet<string> entityKeys = new HashSet<string>(this.entities.Count);
                 foreach (Entity entity in this.entities)
                 {
-                    if (!entityIds.Add(entity.id))
+                    if (!entityKeys.Add(entity.GetIdentityKey()))
                     {
-                        throw new Exception($"Found entites with same {nameof(Entity.id)} ('{entity.id}')");
+                        throw new Exception($"Found entites with same identity key ('{entity.GetIdentityKey()}')");
                     }
                 }
             }
@@ -55,7 +55,7 @@ namespace Nictoarch.Modelling.Core.Elements
                 {
                     if (!linkIds.Add(link.id))
                     {
-                        throw new Exception($"Found links with same {nameof(Entity.id)} ('{link.id}')");
+                        throw new Exception($"Found links with same {nameof(Link.id)} ('{link.id}')");
                     }
                 }
             }
@@ -101,7 +101,7 @@ namespace Nictoarch.Modelling.Core.Elements
 
         public override string ToString()
         {
-            return this.ToJson().ToIndentedString();
+            return this.ToJson().ToIndentedString(Jsonata.Constants.NO_NULLS);
         }
 
         public static async Task<Model> FromJson(Stream stream)
