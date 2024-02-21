@@ -8,32 +8,16 @@ using Jsonata.Net.Native.Json;
 
 namespace Nictoarch.Modelling.Core.Elements
 {
-    public class LinkKey
+    public interface ILinkKey
     {
-        public static readonly IEqualityComparer<LinkKey> Comparer = new ComparerImpl();
+        public static readonly IEqualityComparer<ILinkKey> Comparer = new ComparerImpl();
 
-        public string type { get; set; } = default!;
-        public string id { get; set; } = default!;
+        public string type { get; set; }
+        public string id { get; set; }
 
-        public void Validate()
+        private sealed class ComparerImpl : IEqualityComparer<ILinkKey>
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(this.type, nameof(this.type));
-            ArgumentException.ThrowIfNullOrWhiteSpace(this.id, nameof(this.id));
-        }
-
-        public string GetKeyString()
-        {
-            return JToken.FromObject(this).ToFlatString();
-        }
-
-        public override string ToString()
-        {
-            return this.GetKeyString();
-        }
-
-        private sealed class ComparerImpl : IEqualityComparer<LinkKey>
-        {
-            bool IEqualityComparer<LinkKey>.Equals(LinkKey? x, LinkKey? y)
+            bool IEqualityComparer<ILinkKey>.Equals(ILinkKey? x, ILinkKey? y)
             {
                 if (x == null && y == null)
                 {
@@ -48,7 +32,7 @@ namespace Nictoarch.Modelling.Core.Elements
                     && x.id == y.id;
             }
 
-            int IEqualityComparer<LinkKey>.GetHashCode(LinkKey obj)
+            int IEqualityComparer<ILinkKey>.GetHashCode(ILinkKey obj)
             {
                 int result = 17;
                 result = result * 31 + obj.id.GetHashCode();
@@ -58,11 +42,28 @@ namespace Nictoarch.Modelling.Core.Elements
         }
     }
 
-    public sealed class Link: LinkKey
+    public static class LinkKeyExtensions
     {
+        public static void Validate(this ILinkKey key)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(key.type, nameof(key.type));
+            ArgumentException.ThrowIfNullOrWhiteSpace(key.id, nameof(key.id));
+        }
+
+        public static string GetKeyString(this ILinkKey key)
+        {
+            return JToken.FromObject(key).ToFlatString();
+        }
+    }
+
+    public sealed class Link: ILinkKey
+    {
+        public string type { get; set; } = default!;
+        public string id { get; set; } = default!;
+        public string? display_name { get; set; }
+
         public EntityKey from { get; set; } = default!;
         public EntityKey to { get; set; } = default!;
-        public string? display_name { get; set; }
 
         public Dictionary<string, object>? properties { get; set; } = null;
         public Dictionary<string, object>? properties_info { get; set; } = null;

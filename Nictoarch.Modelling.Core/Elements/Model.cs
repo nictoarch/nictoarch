@@ -45,7 +45,7 @@ namespace Nictoarch.Modelling.Core.Elements
         private void Validate(bool checkLinkIntegrity)
         {
             //entity duplicates
-            HashSet<EntityKey> entityKeys = new HashSet<EntityKey>(this.entities.Count, EntityKey.Comparer);
+            HashSet<IEntityKey> entityKeys = new HashSet<IEntityKey>(this.entities.Count, IEntityKey.Comparer);
             foreach (Entity entity in this.entities)
             {
                 if (!entityKeys.Add(entity))
@@ -56,7 +56,7 @@ namespace Nictoarch.Modelling.Core.Elements
 
             //link duplicates
             {
-                HashSet<LinkKey> linkIds = new HashSet<LinkKey>(this.links.Count, LinkKey.Comparer);
+                HashSet<ILinkKey> linkIds = new HashSet<ILinkKey>(this.links.Count, ILinkKey.Comparer);
                 foreach (Link link in this.links)
                 {
                     if (!linkIds.Add(link))
