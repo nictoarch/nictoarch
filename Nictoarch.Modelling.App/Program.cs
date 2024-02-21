@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.IO;
 using System.Net.Http;
@@ -8,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Jsonata.Net.Native.Json;
+using Microsoft.IdentityModel.Tokens;
 using Nictoarch.Common;
 using Nictoarch.Modelling.Core;
 using Nictoarch.Modelling.Core.AppSupport;
@@ -44,6 +46,38 @@ namespace Nictoarch.Modelling.App
                     specArg, outputOpt
                 );
                 rootCommand.AddCommand(exportModelCommand);
+            }
+
+            {
+                Command mergeModelCommand = new Command("merge-models", "Merge multiple models into one");
+                mergeModelCommand.AddAlias("m");
+                mergeModelCommand.AddAlias("merge");
+                Argument<string> nameArg = new Argument<string>("name", "Name of the new model");
+                Option<List<string>> sourcesOpt = new Option<List<string>>(new string[] { "--in", "-i" }, () => new List<string>(), "input file names or patterns");
+                Option<bool> validateOpt = new Option<bool>(new string[] { "--validate" }, () => false, "Validate model (with links) before ouptut");
+                Option<string?> outputOpt = new Option<string?>(new string[] { "--out", "-o" }, () => null, "Output file name or url");
+                mergeModelCommand.Add(nameArg);
+                mergeModelCommand.Add(sourcesOpt);
+                mergeModelCommand.Add(validateOpt);
+                mergeModelCommand.Add(outputOpt);
+                mergeModelCommand.SetHandler(
+                    MergeModelCommand,
+                    nameArg, sourcesOpt, validateOpt, outputOpt
+                );
+                rootCommand.AddCommand(mergeModelCommand);
+            }
+
+            {
+                Command validateModelCommand = new Command("validate-model", "Fully validate a model");
+                validateModelCommand.AddAlias("v");
+                validateModelCommand.AddAlias("validate");
+                Argument<string> modelFileArg = new Argument<string>("model", "Model file");
+                validateModelCommand.Add(modelFileArg);
+                validateModelCommand.SetHandler(
+                    ValidateModelCommand,
+                    modelFileArg
+                );
+                rootCommand.AddCommand(validateModelCommand);
             }
 
             {
@@ -102,6 +136,102 @@ namespace Nictoarch.Modelling.App
             default:
                 throw new Exception($"Unexpected URI shema '{pushUrl.Scheme}'");
             }
+        }
+
+        private static async Task MergeModelCommand(string modelName, List<string> inputs, bool validate, string? outputFile)
+        {
+            s_logger.Info($"Creating model '{modelName}'");
+            Model model = new Model(modelName, new List<Entity>(), new List<Link>(), new List<object>());
+
+            foreach (string input in inputs)
+            {
+                if (input.Contains('*') || input.Contains('?'))
+                {
+                    string directory = Path.GetDirectoryName(input)!;
+                    string pattern = Path.GetFileName(input);
+
+
+                    if (String.IsNullOrWhiteSpace(directory))
+                    {
+                        directory = ".";
+                    }
+
+                    s_logger.Info($"Enumerating models in '{directory}' for pattern '{pattern}'");
+                    foreach (string file in Directory.EnumerateFiles(directory, pattern))
+                    {
+                        AppendModelFromFile(file);
+                    }
+                }
+                else
+                {
+                    AppendModelFromFile(input);
+                }
+            }
+
+            s_logger.Info("Merging model done");
+
+            if (validate)
+            {
+                s_logger.Info("Validating model");
+                model.Validate(checkLinkIntegrity: true);
+            }
+
+            if (outputFile != null)
+            {
+                Uri pushUrl;
+                try
+                {
+                    pushUrl = new Uri(outputFile);
+                }
+                catch (Exception)
+                {
+                    //not an URI
+                    await SaveModelToFile(model, outputFile);
+                    return;
+                }
+
+                switch (pushUrl.Scheme)
+                {
+                case "http":
+                case "https":
+                    await PushModelToHttp(model, pushUrl);
+                    break;
+                default:
+                    throw new Exception($"Unexpected URI shema '{pushUrl.Scheme}'");
+                }
+            }
+
+            void AppendModelFromFile(string file)
+            {
+                Model addModel;
+                try
+                {
+                    addModel = LoadModelFromFile(file);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Failed to get model: " + ex.Message, ex);
+                }
+
+                model.Merge(addModel);
+            }
+        }
+
+        private static Task ValidateModelCommand(string modelFile)
+        {
+            Model model;
+            try
+            {
+                model = LoadModelFromFile(modelFile);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to load model: " + ex.Message, ex);
+            }
+
+            model.Validate(checkLinkIntegrity: true);
+
+            return Task.CompletedTask;
         }
 
         private static async Task CompareModelsCommand(string refModelFile, string checkModelFile, string? outputDiffFileName, bool throwOnMismatch)

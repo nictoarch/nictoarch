@@ -25,37 +25,38 @@ namespace Nictoarch.Modelling.Core.Elements
             this.invalid_objects = default!;
         }
 
-        public Model(string name, List<Entity> entities, List<Link> links, List<object> invalid_objects)
+        public Model(string name, List<Entity> entities, List<Link> links, List<object> invalidObjects)
         {
             this.name = name ?? throw new ArgumentNullException(nameof(name));
             this.entities = entities ?? throw new ArgumentNullException(nameof(entities));
             this.links = links ?? throw new ArgumentNullException(nameof(links));
-            this.invalid_objects = invalid_objects ?? throw new ArgumentNullException(nameof(invalid_objects));
+            this.invalid_objects = invalidObjects ?? throw new ArgumentNullException(nameof(invalidObjects));
 
-            try
-            {
-                this.Validate(checkLinkIntegrity: false);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error in model {this.name}: {ex.Message}", ex);
-            }
+            this.Validate(checkLinkIntegrity: false);
         }
 
-        private void Validate(bool checkLinkIntegrity)
+        public void Merge(Model other)
         {
-            //entity duplicates
-            HashSet<IEntityKey> entityKeys = new HashSet<IEntityKey>(this.entities.Count, IEntityKey.Comparer);
-            foreach (Entity entity in this.entities)
-            {
-                if (!entityKeys.Add(entity))
-                {
-                    throw new Exception($"Found entites with same identity key ('{entity.GetKeyString()}')");
-                }
-            }
+            this.entities.AddRange(other.entities);
+            this.links.AddRange(other.links);
+            this.invalid_objects.AddRange(other.invalid_objects);
 
-            //link duplicates
+            this.Validate(checkLinkIntegrity: false);
+        }
+
+        public void Validate(bool checkLinkIntegrity)
+        {
+            try
             {
+                HashSet<IEntityKey> entityKeys = new HashSet<IEntityKey>(this.entities.Count, IEntityKey.Comparer);
+                foreach (Entity entity in this.entities)
+                {
+                    if (!entityKeys.Add(entity))
+                    {
+                        throw new Exception($"Found entites with same identity key ('{entity.GetKeyString()}')");
+                    }
+                }
+
                 HashSet<ILinkKey> linkIds = new HashSet<ILinkKey>(this.links.Count, ILinkKey.Comparer);
                 foreach (Link link in this.links)
                 {
@@ -77,6 +78,11 @@ namespace Nictoarch.Modelling.Core.Elements
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error in model {this.name}: {ex.Message}", ex);
+            }
+
         }
 
         public JObject ToJson()
