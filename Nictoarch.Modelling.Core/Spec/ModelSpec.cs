@@ -144,7 +144,27 @@ namespace Nictoarch.Modelling.Core.Spec
                         }
                         else
                         {
-                            this.OnTrace?.Invoke($"No entities section");
+                            this.OnTrace?.Invoke($"No '{nameof(element.entities)}' section");
+                        }
+
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        if (element.links != null)
+                        {
+                            try
+                            {
+                                List<Link> newLinks = element.links.GetLinks(data);
+                                links.AddRange(newLinks);
+                                this.OnTrace?.Invoke($"Got links:\n" + JToken.FromObject(newLinks).ToIndentedString());
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new Exception("Failed to get Links from the element: " + ex.Message, ex);
+                            }
+                        }
+                        else
+                        {
+                            this.OnTrace?.Invoke($"No '{nameof(element.links)}' section");
                         }
 
                         cancellationToken.ThrowIfCancellationRequested();
@@ -171,7 +191,7 @@ namespace Nictoarch.Modelling.Core.Spec
                         }
                         else
                         {
-                            this.OnTrace?.Invoke($"No invalids section");
+                            this.OnTrace?.Invoke($"No '{nameof(element.invalid)}' section");
                         }
                     }
                 }

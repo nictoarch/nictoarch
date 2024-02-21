@@ -9,48 +9,68 @@ using Jsonata.Net.Native.Json;
 
 namespace Nictoarch.Modelling.Core.Elements
 {
-    public sealed class Entity
+    public class EntityKey
     {
+        public static readonly IEqualityComparer<EntityKey> Comparer = new ComparerImpl();
+
         public string type { get; set; } = default!;
         public string? group { get; set; }
         public string id { get; set; } = default!;
+
+        public void Validate()
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(this.type, nameof(this.type));
+            ArgumentException.ThrowIfNullOrWhiteSpace(this.id, nameof(this.id));
+        }
+
+        public string GetKeyString()
+        {
+            return JToken.FromObject(this).ToFlatString();
+        }
+
+        public override string ToString()
+        {
+            return this.GetKeyString();
+        }
+
+        private sealed class ComparerImpl : IEqualityComparer<EntityKey>
+        {
+            bool IEqualityComparer<EntityKey>.Equals(EntityKey? x, EntityKey? y)
+            {
+                if (x == null && y == null)
+                {
+                    return true;
+                }
+                if (x == null || y == null ) 
+                { 
+                    return false; 
+                }
+
+                return x.type == y.type
+                    && x.group == y.group
+                    && x.id == y.id;
+            }
+
+            int IEqualityComparer<EntityKey>.GetHashCode(EntityKey obj)
+            {
+                int result = 17;
+                result = result * 31 + obj.id.GetHashCode();
+                result = result * 31 + obj.group?.GetHashCode() ?? 0;
+                result = result * 31 + obj.id.GetHashCode();
+                return result;
+            }
+        }
+    }
+
+    public sealed class Entity: EntityKey
+    {
         public string? display_name { get; set; }
         public Dictionary<string, object>? properties { get; set; } = null;
         public Dictionary<string, object>? properties_info { get; set; } = null;
 
-        public string GetIdentityKey() => $"{this.type}|{this.group}|{this.id}";
-
-        public void Validate()
-        {
-            ArgumentException.ThrowIfNullOrEmpty(this.type, nameof(this.type));
-            ArgumentException.ThrowIfNullOrEmpty(this.id, nameof(this.id));
-        }
-
         public JObject ToJson()
         {
-            /*
-            JObject result = new JObject();
-            result.Add(nameof(this.type), new JValue(this.type));
-            result.Add(nameof(this.id), new JValue(this.id));
-            if (this.group != null)
-            {
-                result.Add(nameof(this.group), new JValue(this.group));
-            }
-            if (this.display_name != null)
-            {
-                result.Add(nameof(this.display_name), new JValue(this.display_name));
-            }
-            if (this.properties != null)
-            {
-                result.Add(nameof(this.properties), JToken.FromObject(this.properties));
-            }
-            if (this.properties_info != null)
-            {
-                result.Add(nameof(this.properties_info), JToken.FromObject(this.properties_info));
-            }
-            return result;
-            */
-            JObject result = (JObject)JObject.FromObject(this);
+            JObject result = (JObject)JToken.FromObject(this);
             return result;
         }
 

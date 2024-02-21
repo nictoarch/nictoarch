@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Jsonata.Net.Native.Json;
+using Nictoarch.Modelling.Core.Elements;
 
 namespace Nictoarch.Modelling.Core.Jsonata
 {
@@ -54,5 +55,28 @@ namespace Nictoarch.Modelling.Core.Jsonata
             return (string)prop;
         }
 
+        internal static EntityKey GetEntityKey(this JObject obj, string name)
+        {
+            if (!obj.Properties.TryGetValue(name, out JToken? prop))
+            {
+                throw new Exception($"Missing required property '{name}'");
+            }
+
+            if (prop.Type != JTokenType.Object)
+            {
+                throw new Exception($"Property '{name}' expected to be an Object but it is {prop.Type}");
+            }
+
+            try
+            {
+                EntityKey result = prop.ToObject<EntityKey>(Constants.ALLOW_MISSING);
+                result.Validate();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error deserializing property '{name}' to EntityKey: {ex.Message}", ex);
+            }
+        }
     }
 }

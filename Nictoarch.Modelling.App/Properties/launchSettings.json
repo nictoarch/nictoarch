@@ -17,7 +17,7 @@
     },
     "Profile 1": {
       "commandName": "Project",
-      "commandLineArgs": "e cpl.abcloud-db.spec.yaml -o cpl.abcloud-db.spec.model.json",
+      "commandLineArgs": "e cpl.rmq.spec.yaml -o cpl.rmq.spec.model.json",
       "workingDirectory": "f:\\Projects\\_Small_Projects\\activebc.infrastructure.statusservice\\models  "
     },
     "Profile 2": {

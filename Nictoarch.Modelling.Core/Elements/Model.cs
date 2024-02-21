@@ -34,7 +34,7 @@ namespace Nictoarch.Modelling.Core.Elements
 
             try
             {
-                this.Validate();
+                this.Validate(checkLinkIntegrity: false);
             }
             catch (Exception ex)
             {
@@ -42,28 +42,38 @@ namespace Nictoarch.Modelling.Core.Elements
             }
         }
 
-        private void Validate()
+        private void Validate(bool checkLinkIntegrity)
         {
             //entity duplicates
+            HashSet<EntityKey> entityKeys = new HashSet<EntityKey>(this.entities.Count, EntityKey.Comparer);
+            foreach (Entity entity in this.entities)
             {
-                HashSet<string> entityKeys = new HashSet<string>(this.entities.Count);
-                foreach (Entity entity in this.entities)
+                if (!entityKeys.Add(entity))
                 {
-                    if (!entityKeys.Add(entity.GetIdentityKey()))
-                    {
-                        throw new Exception($"Found entites with same identity key ('{entity.GetIdentityKey()}')");
-                    }
+                    throw new Exception($"Found entites with same identity key ('{entity.GetKeyString()}')");
                 }
             }
 
             //link duplicates
             {
-                HashSet<string> linkIds = new HashSet<string>(this.links.Count);
+                HashSet<LinkKey> linkIds = new HashSet<LinkKey>(this.links.Count, LinkKey.Comparer);
                 foreach (Link link in this.links)
                 {
-                    if (!linkIds.Add(link.id))
+                    if (!linkIds.Add(link))
                     {
-                        throw new Exception($"Found links with same {nameof(Link.id)} ('{link.id}')");
+                        throw new Exception($"Found links with same identity key ('{link.GetKeyString()}')");
+                    }
+
+                    if (checkLinkIntegrity)
+                    {
+                        if (!entityKeys.Contains(link.from))
+                        {
+                            throw new Exception($"No '{nameof(link.from)}' entity found for link '{link.GetKeyString()}' (from: {link.from.GetKeyString()})");
+                        }
+                        if (!entityKeys.Contains(link.to))
+                        {
+                            throw new Exception($"No '{nameof(link.to)}' entity found for link '{link.GetKeyString()}' (to: {link.to.GetKeyString()})");
+                        }
                     }
                 }
             }

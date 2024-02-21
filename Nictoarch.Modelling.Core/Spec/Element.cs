@@ -13,6 +13,7 @@ namespace Nictoarch.Modelling.Core.Spec
         [Required] public ExtractConfigBase extract { get; set; } = default!;
         public JsonataQuery? filter { get; set; }
         public EntitiesSelectorBase? entities { get; set; }
+        public LinksSelectorBase? links { get; set; }
         public JsonataQuery? invalid { get; set; }
     }
 }

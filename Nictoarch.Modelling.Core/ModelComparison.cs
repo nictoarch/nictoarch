@@ -38,14 +38,14 @@ namespace Nictoarch.Modelling.Core
         public ModelComparison(Model refModel, Model checkModel)
         {
             this.entities_not_in_check = refModel.entities
-                .Where(re => !checkModel.entities.Any(ce => ce.GetIdentityKey() == re.GetIdentityKey()))
+                .Where(re => !checkModel.entities.Any(ce => EntityKey.Comparer.Equals(ce, re)))
                 .ToList();
             this.entities_not_in_ref = checkModel.entities
-                .Where(ce => !refModel.entities.Any(re => re.GetIdentityKey() == ce.GetIdentityKey()))
+                .Where(ce => !refModel.entities.Any(re => EntityKey.Comparer.Equals(re, ce)))
                 .ToList();
 
             this.entities_different_properties = refModel.entities
-                .Select(re => new PropDiff() { @ref = re, check = checkModel.entities.FirstOrDefault(ce => ce.GetIdentityKey() == re.GetIdentityKey())! })
+                .Select(re => new PropDiff() { @ref = re, check = checkModel.entities.FirstOrDefault(ce => EntityKey.Comparer.Equals(ce, re))! })
                 .Where(d => d.check != null)
                 .Select(d => {
                     d.diffs = this.CalculateDiff(d.@ref.properties, d.check.properties)!;

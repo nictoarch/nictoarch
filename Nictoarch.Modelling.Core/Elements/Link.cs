@@ -8,37 +8,75 @@ using Jsonata.Net.Native.Json;
 
 namespace Nictoarch.Modelling.Core.Elements
 {
-    public sealed class Link
+    public class LinkKey
     {
-        public Entity from { get; }
-        public Entity to { get; }
-        public string id { get; }
-        public string? display_text { get; }
+        public static readonly IEqualityComparer<LinkKey> Comparer = new ComparerImpl();
 
-        public Link(Entity from, Entity to, string domainId, string semanticId, string displayText)
+        public string type { get; set; } = default!;
+        public string id { get; set; } = default!;
+
+        public void Validate()
         {
-            this.from = from ?? throw new ArgumentNullException(nameof(from));
-            this.to = to ?? throw new ArgumentNullException(nameof(to));
-            this.id = semanticId ?? throw new ArgumentNullException(nameof(semanticId));
-            this.display_text = displayText;
+            ArgumentException.ThrowIfNullOrWhiteSpace(this.type, nameof(this.type));
+            ArgumentException.ThrowIfNullOrWhiteSpace(this.id, nameof(this.id));
         }
+
+        public string GetKeyString()
+        {
+            return JToken.FromObject(this).ToFlatString();
+        }
+
+        public override string ToString()
+        {
+            return this.GetKeyString();
+        }
+
+        private sealed class ComparerImpl : IEqualityComparer<LinkKey>
+        {
+            bool IEqualityComparer<LinkKey>.Equals(LinkKey? x, LinkKey? y)
+            {
+                if (x == null && y == null)
+                {
+                    return true;
+                }
+                if (x == null || y == null)
+                {
+                    return false;
+                }
+
+                return x.type == y.type
+                    && x.id == y.id;
+            }
+
+            int IEqualityComparer<LinkKey>.GetHashCode(LinkKey obj)
+            {
+                int result = 17;
+                result = result * 31 + obj.id.GetHashCode();
+                result = result * 31 + obj.id.GetHashCode();
+                return result;
+            }
+        }
+    }
+
+    public sealed class Link: LinkKey
+    {
+        public EntityKey from { get; set; } = default!;
+        public EntityKey to { get; set; } = default!;
+        public string? display_name { get; set; }
+
+        public Dictionary<string, object>? properties { get; set; } = null;
+        public Dictionary<string, object>? properties_info { get; set; } = null;
 
         public JObject ToJson()
         {
-            JObject result = new JObject();
-            result.Add("from_id", new JValue(this.from.id));
-            result.Add("to_id", new JValue(this.to.id));
-            result.Add(nameof(this.id), new JValue(this.id));
-            if (this.display_text != null)
-            {
-                result.Add(nameof(this.display_text), new JValue(this.display_text));
-            }
+            JObject result = (JObject)JToken.FromObject(this);
             return result;
         }
 
         public override string ToString()
         {
-            return this.ToJson().ToIndentedString();
+            return this.ToJson().ToIndentedString(Jsonata.Constants.NO_NULLS);
         }
+
     }
 }
