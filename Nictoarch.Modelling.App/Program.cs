@@ -38,12 +38,14 @@ namespace Nictoarch.Modelling.App
                 exportModelCommand.AddAlias("e");
                 exportModelCommand.AddAlias("extract");
                 Argument<string> specArg = new Argument<string>("spec", "Path to spec yaml file");
+                Option<bool> validateOpt = new Option<bool>(new string[] { "--validate" }, () => false, "Validate model (with links) before ouptut");
                 Option<string?> outputOpt = new Option<string?>(new string[] { "--out", "-o" }, () => null, "Output file name or url");
                 exportModelCommand.Add(specArg);
+                exportModelCommand.Add(validateOpt);
                 exportModelCommand.Add(outputOpt);
                 exportModelCommand.SetHandler(
                     ExtractModelCommand,
-                    specArg, outputOpt
+                    specArg, validateOpt, outputOpt
                 );
                 rootCommand.AddCommand(exportModelCommand);
             }
@@ -106,7 +108,7 @@ namespace Nictoarch.Modelling.App
             return await rootCommand.InvokeAsync(args);
         }
 
-        private static async Task ExtractModelCommand(string specFile, string? outputFile)
+        private static async Task ExtractModelCommand(string specFile, bool validate, string? outputFile)
         {
             if (outputFile == null)
             {
@@ -115,27 +117,13 @@ namespace Nictoarch.Modelling.App
 
             Model model = await ExtractModel(specFile);
 
-            Uri pushUrl;
-            try
+            if (validate)
             {
-                pushUrl = new Uri(outputFile);
-            }
-            catch (Exception)
-            {
-                //not an URI
-                await SaveModelToFile(model, outputFile);
-                return;
+                s_logger.Info("Validating model");
+                model.Validate(checkLinkIntegrity: true);
             }
 
-            switch (pushUrl.Scheme)
-            {
-            case "http":
-            case "https":
-                await PushModelToHttp(model, pushUrl);
-                break;
-            default:
-                throw new Exception($"Unexpected URI shema '{pushUrl.Scheme}'");
-            }
+            await OutputModel(model, outputFile);
         }
 
         private static async Task MergeModelCommand(string modelName, List<string> inputs, bool validate, string? outputFile)
@@ -178,27 +166,7 @@ namespace Nictoarch.Modelling.App
 
             if (outputFile != null)
             {
-                Uri pushUrl;
-                try
-                {
-                    pushUrl = new Uri(outputFile);
-                }
-                catch (Exception)
-                {
-                    //not an URI
-                    await SaveModelToFile(model, outputFile);
-                    return;
-                }
-
-                switch (pushUrl.Scheme)
-                {
-                case "http":
-                case "https":
-                    await PushModelToHttp(model, pushUrl);
-                    break;
-                default:
-                    throw new Exception($"Unexpected URI shema '{pushUrl.Scheme}'");
-                }
+                await OutputModel(model, outputFile);
             }
 
             void AppendModelFromFile(string file)
@@ -216,6 +184,32 @@ namespace Nictoarch.Modelling.App
                 model.Merge(addModel);
             }
         }
+
+        private static async Task OutputModel(Model model, string outputFile)
+        {
+            Uri pushUrl;
+            try
+            {
+                pushUrl = new Uri(outputFile);
+            }
+            catch (Exception)
+            {
+                //not an URI
+                await SaveModelToFile(model, outputFile);
+                return;
+            }
+
+            switch (pushUrl.Scheme)
+            {
+            case "http":
+            case "https":
+                await PushModelToHttp(model, pushUrl);
+                break;
+            default:
+                throw new Exception($"Unexpected URI shema '{pushUrl.Scheme}'");
+            }
+        }
+
 
         private static Task ValidateModelCommand(string modelFile)
         {
