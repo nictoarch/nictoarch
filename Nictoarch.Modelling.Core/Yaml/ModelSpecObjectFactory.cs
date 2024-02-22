@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nictoarch.Modelling.Core.BuiltinSources.Combined;
 using Nictoarch.Modelling.Core.Spec;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
@@ -18,7 +19,9 @@ namespace Nictoarch.Modelling.Core.Yaml
         private readonly IObjectFactory m_fallback;
         private readonly SourceRegistry m_registry;
 
+        private readonly Stack<SourceRegistry.SourceFactoryWrapper> m_factoryStack = new Stack<SourceRegistry.SourceFactoryWrapper>();
         private SourceRegistry.SourceFactoryWrapper? m_currentFactory = null;
+
         internal ITypeDiscriminator Discriminator { get; }
 
         internal SourceRegistry.SourceFactoryWrapper CurrentFactory
@@ -53,9 +56,12 @@ namespace Nictoarch.Modelling.Core.Yaml
                 {
                     throw new Exception($"Should not happen: no factory with source config type {type.Name} ({type.FullName})");
                 }
-                else
+
+                this.m_currentFactory = factory;
+                if (type == typeof(CombinedSourceConfig))
                 {
-                    this.m_currentFactory = factory;
+                    //special hack for nested providers
+                    this.m_factoryStack.Push(this.m_currentFactory);
                 }
             }
 
@@ -85,6 +91,12 @@ namespace Nictoarch.Modelling.Core.Yaml
         void IObjectFactory.ExecuteOnDeserialized(object value)
         {
             this.m_fallback.ExecuteOnDeserialized(value);
+
+            if (value.GetType() == typeof(CombinedSourceConfig))
+            {
+                //special hack for nested providers
+                this.m_currentFactory = this.m_factoryStack.Pop();
+            }
         }
 
         void IObjectFactory.ExecuteOnSerializing(object value)

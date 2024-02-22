@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Jsonata.Net.Native.Json;
+using Nictoarch.Modelling.Core.BuiltinSources.Combined;
 using Nictoarch.Modelling.Core.Elements;
 using Nictoarch.Modelling.Core.Spec;
 using Nictoarch.Modelling.Core.Yaml;
@@ -47,13 +48,13 @@ namespace Nictoarch.Modelling.Core
 
             foreach (string dllName in fileNames)
             {
-                this.LoadPluginsFromAssembly(dllName);
+                Assembly pluginAssembly = Assembly.LoadFrom(dllName);
+                this.LoadPluginsFromAssembly(pluginAssembly);
             }
         }
 
-        private void LoadPluginsFromAssembly(string dllName)
+        private void LoadPluginsFromAssembly(Assembly pluginAssembly)
         {
-            Assembly pluginAssembly = Assembly.LoadFrom(dllName);
             AssemblyName assemblyName = new AssemblyName(pluginAssembly.FullName!);
             this.m_logger.Trace($"Loading providers from {assemblyName.Name} v{assemblyName.Version}");
 
@@ -69,7 +70,7 @@ namespace Nictoarch.Modelling.Core
                         Type configType = args[0];
                         Type sourceType = args[1];
                         Type extractType = args[2];
-                        SourceFactoryWrapper wrapper = new SourceFactoryWrapper(factoryClassType, configType, sourceType, extractType);
+                        SourceFactoryWrapper wrapper = new SourceFactoryWrapper(factoryClassType, configType, sourceType, extractType, this);
                         this.m_factoryWrappers.Add(wrapper.Name, wrapper);
                         this.m_logger.Trace($"Added source factory '{wrapper.Name}' from {factoryClassType.Name}");
                     }
@@ -94,7 +95,7 @@ namespace Nictoarch.Modelling.Core
                 .Append(configTypeDiscriminator);
         }
 
-        internal bool GetProviderFactory(string name, [NotNullWhen(true)] out SourceFactoryWrapper? factory)
+        public bool GetProviderFactory(string name, [NotNullWhen(true)] out SourceFactoryWrapper? factory)
         {
             return this.m_factoryWrappers.TryGetValue(name, out factory);
         }
@@ -105,29 +106,32 @@ namespace Nictoarch.Modelling.Core
             return factory != null;
         }
 
-        internal sealed class SourceFactoryWrapper
+        public sealed class SourceFactoryWrapper
         {
             private readonly ISourceFactory m_factoryInstance;
             private readonly MethodInfo m_getSourceMethod;
             private readonly MethodInfo m_extractDataMethod;
-            /*
-            private readonly MethodInfo m_getProviderMethod;
-            private readonly MethodInfo m_getEntitesMethod;
-            private readonly MethodInfo m_getInvalidObjectsMethod;
-            */
 
             internal string Name => this.m_factoryInstance.Name;
             internal Type ConfigType { get; }
             internal Type SourceType { get; }
             internal Type ExtractType { get; }
 
-            internal SourceFactoryWrapper(Type providerType, Type configType, Type sourceType, Type extractType)
+            internal SourceFactoryWrapper(Type providerType, Type configType, Type sourceType, Type extractType, SourceRegistry registry)
             {
                 this.ConfigType = configType;
                 this.SourceType = sourceType;
                 this.ExtractType = extractType;
 
-                this.m_factoryInstance = (ISourceFactory)Activator.CreateInstance(providerType)!;
+                if (providerType == typeof(CombinedSourceFactory))
+                {
+                    //special constructor
+                    this.m_factoryInstance = (ISourceFactory)Activator.CreateInstance(providerType, new object[] { registry })!;
+                }
+                else
+                { 
+                    this.m_factoryInstance = (ISourceFactory)Activator.CreateInstance(providerType)!;
+                }
 
                 this.m_getSourceMethod = typeof(ISourceFactory<,,>)
                     .MakeGenericType(this.ConfigType, this.SourceType, this.ExtractType)
@@ -136,18 +140,6 @@ namespace Nictoarch.Modelling.Core
                 this.m_extractDataMethod = typeof(ISource<>)
                     .MakeGenericType(this.ExtractType)
                     .GetMethod(nameof(ISource<ExtractConfigBase>.Extract))!;
-
-                /*
-                this.m_getProviderMethod = typeof(IModelProviderFactory<,,>)
-                    .MakeGenericType(this.ConfigType, this.EntityConfigType, this.ValidationConfigType)
-                    .GetMethod(nameof(IModelProviderFactory<object, object, object>.GetProviderAsync))!;
-                this.m_getEntitesMethod = typeof(IModelProvider<,>)
-                    .MakeGenericType(this.EntityConfigType, this.ValidationConfigType)
-                    .GetMethod(nameof(IModelProvider<object, object>.GetEntitiesAsync))!;
-                this.m_getInvalidObjectsMethod = typeof(IModelProvider<,>)
-                    .MakeGenericType(this.EntityConfigType, this.ValidationConfigType)
-                    .GetMethod(nameof(IModelProvider<object, object>.GetInvalidObjectsAsync))!;
-                */
             }
 
             internal IEnumerable<ITypeDiscriminator> GetYamlTypeDiscriminators()
@@ -155,7 +147,7 @@ namespace Nictoarch.Modelling.Core
                 return this.m_factoryInstance.GetYamlTypeDiscriminators();
             }
 
-            internal Task<ISource> GetSource(SourceConfigBase sourceConfig, CancellationToken cancellationToken)
+            public Task<ISource> GetSource(SourceConfigBase sourceConfig, CancellationToken cancellationToken)
             {
                 if (!this.ConfigType.IsAssignableFrom(sourceConfig.GetType())) 
                 {
@@ -165,7 +157,7 @@ namespace Nictoarch.Modelling.Core
                 return (Task<ISource>)result;
             }
 
-            internal Task<JToken> Extract(ISource source, ExtractConfigBase extractConfig, CancellationToken cancellationToken)
+            public Task<JToken> Extract(ISource source, ExtractConfigBase extractConfig, CancellationToken cancellationToken)
             {
                 if (!this.ExtractType.IsAssignableFrom(extractConfig.GetType()))
                 {
@@ -174,37 +166,6 @@ namespace Nictoarch.Modelling.Core
                 return (Task<JToken>)this.m_extractDataMethod.Invoke(source, new object[] { extractConfig, cancellationToken })!;
             }
 
-            /*
-            internal Task<IModelProvider> GetProviderAsync(object config, CancellationToken cancellationToken)
-            {
-                if (!this.ConfigType.IsAssignableFrom(config.GetType())) 
-                { 
-                    throw new Exception($"Bad config type ({config.GetType()}) specified for Model provider {this.Name}, expected {this.ConfigType}");
-                }
-
-                return (Task<IModelProvider>)this.m_getProviderMethod.Invoke(this.m_factoryInstance, new object[] { config, cancellationToken })!;
-            }
-
-            internal Task<List<Entity>> GetEntitiesAsync(IModelProvider provider, object config, CancellationToken cancellationToken)
-            {
-                if (!this.EntityConfigType.IsAssignableFrom(config.GetType()))
-                {
-                    throw new Exception($"Bad Entity config type ({config.GetType()}) specified for Model provider {this.Name}, expected {this.EntityConfigType}");
-                }
-
-                return (Task<List<Entity>>)this.m_getEntitesMethod.Invoke(provider, new object[] { config, cancellationToken })!;
-            }
-
-            internal Task<List<object>> GetInvalidObjactsAsync(IModelProvider provider, object config, CancellationToken cancellationToken)
-            {
-                if (!this.ValidationConfigType.IsAssignableFrom(config.GetType()))
-                {
-                    throw new Exception($"Bad Validation config type ({config.GetType()}) specified for Model provider {this.Name}, expected {this.ValidationConfigType}");
-                }
-
-                return (Task<List<object>>)this.m_getInvalidObjectsMethod.Invoke(provider, new object[] { config, cancellationToken })!;
-            }
-            */
         }
     }
 }

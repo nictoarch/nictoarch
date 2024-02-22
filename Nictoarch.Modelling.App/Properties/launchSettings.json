@@ -21,7 +21,7 @@
     },
     "Profile 1 - extract": {
       "commandName": "Project",
-      "commandLineArgs": "e cpl.k8s.spec.yaml -o cpl.k8s.spec.model.json",
+      "commandLineArgs": "e cpl.k8s.spec.yaml -o cpl.k8s.spec.model.json --validate",
       "workingDirectory": "f:\\Projects\\_Small_Projects\\activebc.infrastructure.statusservice\\models  "
     },
     "Profile 2 - diff": {

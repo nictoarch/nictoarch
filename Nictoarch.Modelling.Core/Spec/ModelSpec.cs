@@ -125,9 +125,9 @@ namespace Nictoarch.Modelling.Core.Spec
                         {
                             data = element.filter.Eval(data, "filter");
                             this.OnTrace?.Invoke($"Filtered element data:\n" + data.ToIndentedString());
-                        }
 
-                        cancellationToken.ThrowIfCancellationRequested();
+                            cancellationToken.ThrowIfCancellationRequested();
+                        }
 
                         if (element.entities != null)
                         {
@@ -141,13 +141,13 @@ namespace Nictoarch.Modelling.Core.Spec
                             {
                                 throw new Exception("Failed to get Entities from the element: " + ex.Message, ex);
                             }
+                            cancellationToken.ThrowIfCancellationRequested();
                         }
                         else
                         {
                             this.OnTrace?.Invoke($"No '{nameof(element.entities)}' section");
                         }
 
-                        cancellationToken.ThrowIfCancellationRequested();
 
                         if (element.links != null)
                         {
@@ -161,13 +161,12 @@ namespace Nictoarch.Modelling.Core.Spec
                             {
                                 throw new Exception("Failed to get Links from the element: " + ex.Message, ex);
                             }
+                            cancellationToken.ThrowIfCancellationRequested();
                         }
                         else
                         {
                             this.OnTrace?.Invoke($"No '{nameof(element.links)}' section");
                         }
-
-                        cancellationToken.ThrowIfCancellationRequested();
 
                         if (element.invalid != null)
                         {

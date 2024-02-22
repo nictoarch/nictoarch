@@ -119,3 +119,45 @@ data:
                     }
                 }
             )
+  - source: 
+      type: combined
+      sources:
+        services: 
+          source: 
+            type: k8s
+          extract:
+            resource_kind: service
+            namespace: default
+        deployments:
+          source:
+            type: k8s
+          extract:
+            resource_kind: deployment
+            namespace: default
+    elements:
+      - extract: {}
+        links: |
+          $map(
+            services,
+            function($s) {
+              (
+                $d := $$.deployments[spec.selector.matchLabels = $s.spec.selector];
+                {
+                  "type": "k8s_service_deployment",
+                  "id": $s.metadata.name & '->' & $d.metadata.name,
+                  "from": {
+                    "type": "k8s_service",
+                    "id": $s.metadata.name
+                  },
+                  "to": {
+                    "type": "k8s_deployment",
+                    "id": $d.metadata.name
+                  }
+                }
+              )
+            }
+          ) ~> $filter(
+            function($l) {
+              $exists($l.to.id)
+            }
+          )
