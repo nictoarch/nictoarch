@@ -24,12 +24,13 @@ namespace Nictoarch.Modelling.K8s
             List<Command> result = new List<Command>();
 
             {
-                Command listApisCommand = new Command("resources", "Lists available K8s resources");
-                listApisCommand.AddAlias("res");
+                Command listApisCommand = new Command("resource-types", "Lists available K8s resources");
+                listApisCommand.AddAlias("res-types");
+                listApisCommand.AddAlias("types");
 
                 Option<string?> configFileOption = new Option<string?>(new string[] { "--config", "-c" }, () => null, "Config file location");
-                listApisCommand.Add(configFileOption);
                 Option<bool> detailsOption = new Option<bool>(new string[] { "--details", "-d" }, () => false, "Output all details");
+                listApisCommand.Add(configFileOption);
                 listApisCommand.Add(detailsOption);
 
                 listApisCommand.SetHandler(
@@ -40,7 +41,54 @@ namespace Nictoarch.Modelling.K8s
                 result.Add(listApisCommand);
             }
 
+            {
+                Command listApisCommand = new Command("resource-get", "Get resources of a type");
+                listApisCommand.AddAlias("res-get");
+                listApisCommand.AddAlias("get");
+
+                Argument<string> typeArg = new Argument<string>("type", "Type of resource to get");
+                Option<string?> namespaceOption = new Option<string?>(new string[] { "--namespace", "--ns", "-n" }, () => null, "Namespace to get resources from");
+                Option<string?> labelsOption = new Option<string?>(new string[] { "--labels", "-l" }, () => null, "Label selector query");
+                Option<string?> configFileOption = new Option<string?>(new string[] { "--config", "-c" }, () => null, "Config file location");
+                listApisCommand.Add(typeArg);
+                listApisCommand.Add(namespaceOption);
+                listApisCommand.Add(labelsOption);
+                listApisCommand.Add(configFileOption);
+
+                listApisCommand.SetHandler(
+                    this.GetResourcesCommand,
+                    typeArg, namespaceOption, labelsOption, configFileOption
+                );
+
+                result.Add(listApisCommand);
+            }
+
             return result;
+        }
+
+        private async Task GetResourcesCommand(string resourceType, string? @namespace, string? labels, string? configFileName)
+        {
+            if (configFileName != null)
+            {
+                this.m_logger.Trace("Using config file at " + configFileName);
+            }
+
+            KubernetesClientConfiguration config = K8sClient.GetConfiguration(false, configFileName);
+            using (K8sClient client = new K8sClient(config))
+            {
+
+                await client.InitAsync(CancellationToken.None);
+                JArray resources = await client.GetResources(
+                    apiGroup: null,
+                    resourceKind: resourceType.ToLowerInvariant(),
+                    @namespace: @namespace,
+                    labelSelector: labels,
+                    cancellationToken: CancellationToken.None
+                );
+
+                
+                Console.WriteLine(resources.ToIndentedString());
+            }
         }
 
         private async Task ListApisCommand(string? configFileName, bool showDetails)

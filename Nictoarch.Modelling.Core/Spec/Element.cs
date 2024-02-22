@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Jsonata.Net.Native;
+using Nictoarch.Modelling.Core.Yaml;
 
 namespace Nictoarch.Modelling.Core.Spec
 {
@@ -14,6 +15,6 @@ namespace Nictoarch.Modelling.Core.Spec
         public JsonataQuery? filter { get; set; }
         public EntitiesSelectorBase? entities { get; set; }
         public LinksSelectorBase? links { get; set; }
-        public JsonataQuery? invalid { get; set; }
+        public JsonataQueryYamlWrapper? invalid { get; set; } //using wrapper instead of a query as a workaround for using !inpace and otehr tags because those only return string, https://github.com/aaubry/YamlDotNet/issues/368
     }
 }

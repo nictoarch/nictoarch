@@ -95,7 +95,7 @@ namespace Nictoarch.Modelling.Core.Yaml
                     }
                     catch (Exception ex)
                     {
-                        throw new YamlException(scalar.Start, scalar.End, $"Failed to parse yaml content of {TAG} file {filePath}: {ex.Message}", ex);
+                        throw new YamlException(scalar.Start, scalar.End, $"Failed to parse yaml content of {TAG} file {filePath}: {ex.ToString()}", ex);
                     }
 
                     ISerializer serializer = new SerializerBuilder()

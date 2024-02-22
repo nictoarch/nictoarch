@@ -5,7 +5,11 @@
     },
     "k8s res": {
       "commandName": "Project",
-      "commandLineArgs": "k8s res"
+      "commandLineArgs": "k8s types"
+    },
+    "k8s services": {
+      "commandName": "Project",
+      "commandLineArgs": "k8s get services"
     },
     "json xml": {
       "commandName": "Project",
@@ -15,15 +19,15 @@
       "commandName": "Project",
       "commandLineArgs": "e ../../../../Nictoarch.Modelling.Core/model_spec_sample.yaml -o ./model_spec_sample.yaml.json"
     },
+    "Profile 1 - extract": {
+      "commandName": "Project",
+      "commandLineArgs": "e cpl.k8s.spec.yaml -o cpl.k8s.spec.model.json",
+      "workingDirectory": "f:\\Projects\\_Small_Projects\\activebc.infrastructure.statusservice\\models  "
+    },
     "Profile 2 - diff": {
       "commandName": "Project",
       "commandLineArgs": "c cpl.abcloud-db.spec.model.json cpl-abtsc.abcloud-db.spec.model.json -o cpl-abtsc-2-cpl.abcloud-db.diff.json",
       "workingDirectory": "f:\\Projects\\_Small_Projects\\activebc.infrastructure.statusservice\\models"
-    },
-    "Profile 1 - extract": {
-      "commandName": "Project",
-      "commandLineArgs": "e cpl.rmq.spec.yaml -o cpl.rmq.spec.model.json",
-      "workingDirectory": "f:\\Projects\\_Small_Projects\\activebc.infrastructure.statusservice\\models  "
     },
     "Profile 3 - merge": {
       "commandName": "Project",

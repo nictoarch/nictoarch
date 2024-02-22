@@ -171,7 +171,7 @@ namespace Nictoarch.Modelling.Core.Spec
 
                         if (element.invalid != null)
                         {
-                            JToken newInvalids = element.invalid.Eval(data, "invalid");
+                            JToken newInvalids = element.invalid.query.Eval(data, "invalid");
                             switch (newInvalids.Type)
                             {
                             case JTokenType.Undefined:
