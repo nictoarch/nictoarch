@@ -17,7 +17,7 @@ namespace Nictoarch.Modelling.Core.Yaml
             return type == typeof(JsonataQuery);
         }
 
-        object? IYamlTypeConverter.ReadYaml(IParser parser, Type type)
+        object? IYamlTypeConverter.ReadYaml(IParser parser, Type type, ObjectDeserializer rootDeserializer)
         {
             Scalar queryEvent = parser.Consume<Scalar>();
             string queryText = queryEvent.Value;
@@ -25,7 +25,7 @@ namespace Nictoarch.Modelling.Core.Yaml
             return query;
         }
 
-        void IYamlTypeConverter.WriteYaml(IEmitter emitter, object? value, Type type)
+        void IYamlTypeConverter.WriteYaml(IEmitter emitter, object? value, Type type, ObjectSerializer serializer)
         {
             throw new NotSupportedException();
         }

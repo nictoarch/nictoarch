@@ -28,7 +28,7 @@ namespace Nictoarch.Modelling.Core.Yaml
             this.m_basePath = basePath;
         }
 
-        bool INodeDeserializer.Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value)
+        bool INodeDeserializer.Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value, ObjectDeserializer rootDeserializer)
         {
             if (parser.Accept<Scalar>(out Scalar? scalar) && scalar.Tag == TAG)
             {

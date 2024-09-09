@@ -22,10 +22,10 @@ namespace Nictoarch.Modelling.Core.Yaml
             this.m_nodeDeserializer = internalDeserialzier;
         }
 
-        public bool Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value)
+        public bool Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value, ObjectDeserializer rootDeserializer)
         {
             ParsingEvent? currentEvent = parser.Current;
-            if (!this.m_nodeDeserializer.Deserialize(parser, expectedType, nestedObjectDeserializer, out value)
+            if (!this.m_nodeDeserializer.Deserialize(parser, expectedType, nestedObjectDeserializer, out value, rootDeserializer)
                 || value == null
             )
             {
