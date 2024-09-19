@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using k8s.Models;
 using k8s;
 
-namespace Nictoarch.ServiceLink.Operator
+namespace Nictoarch.ServiceLink.Operator.Resources
 {
     public class LinkResource : CustomResource<LinkResourceSpec, LinkResourceStatus>
     {
@@ -18,7 +18,7 @@ namespace Nictoarch.ServiceLink.Operator
 
         internal string GetEgressPolicyName()
         {
-            return $"servicelink_{this.Metadata.Name}_egress";
+            return $"servicelink_egress_{this.Metadata.Name}";
         }
 
         internal string GetEgressPolicyNamespace()
@@ -28,17 +28,17 @@ namespace Nictoarch.ServiceLink.Operator
 
         internal string GetEgressPolicyNamespacedName()
         {
-            return K8sExtensions.GetNamespacedName(this.GetNamespacedName(), this.GetEgressPolicyNamespace());
+            return K8sExtensions.GetNamespacedName(this.GetEgressPolicyName(), this.GetEgressPolicyNamespace());
         }
 
         internal string GetEgressPolicyServiceNamespacedName()
         {
-            return K8sExtensions.GetNamespacedName(this.Spec.from.service, this.Metadata.NamespaceProperty);
+            return K8sExtensions.GetNamespacedName(this.Spec.from.service, this.GetEgressPolicyNamespace());
         }
 
         internal string GetIngressPolicyName()
         {
-            return $"servicelink_{this.Metadata.NamespaceProperty}_{this.Metadata.Name}_ingress";
+            return $"servicelink_ingress_{this.Metadata.NamespaceProperty}_{this.Metadata.Name}";
         }
 
         internal string GetIngressPolicyNamespace()
@@ -53,7 +53,7 @@ namespace Nictoarch.ServiceLink.Operator
 
         internal string GetIngressPolicyServiceNamespacedName()
         {
-            return K8sExtensions.GetNamespacedName(this.Spec.to.service, this.Spec.to.namespaceProperty ?? this.Metadata.NamespaceProperty);
+            return K8sExtensions.GetNamespacedName(this.Spec.to.service, this.GetIngressPolicyNamespace());
         }
 
         internal bool UpdateState(Controller.ServiceState egressServiceState, Controller.ServiceState ingressServiceState, Controller.PolicyState egressState, Controller.PolicyState ingressState)
@@ -92,12 +92,11 @@ namespace Nictoarch.ServiceLink.Operator
 
     public sealed class LinkResourceStatus : V1Status
     {
-        //[JsonPropertyName("temperature")]
         public string state { get; set; } = default!;
 
         public override string ToString()
         {
-            return "state: " + this.state;
+            return "state: " + state;
         }
     }
 }

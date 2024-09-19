@@ -12,26 +12,61 @@ namespace Nictoarch.ServiceLink.Operator
 {
     public static class K8sExtensions
     {
-        public static async Task<T> ListNamespacedCustomObjectAsync<T>(
-            this IKubernetes client,
+        public static Task<T> ListCustomObjectForAllNamespacesAsync<T>(
+            this ICustomObjectsOperations operations,
             string group,
             string version,
-            string namespaceParameter,
             string plural,
+            bool? allowWatchBookmarks = null,
+            string? continueParameter = null,
+            string? fieldSelector = null,
+            string? labelSelector = null,
+            int? limit = null,
+            string? resourceVersion = null,
+            string? resourceVersionMatch = null,
+            int? timeoutSeconds = null,
+            bool? watch = null,
+            bool? pretty = null,
             CancellationToken cancellationToken = default
         )
-        where T : IKubernetesObject
         {
-            k8s.Autorest.HttpOperationResponse<object> resp = await client.CustomObjects.ListNamespacedCustomObjectWithHttpMessagesAsync(
-                group: group,
-                version: version,
-                namespaceParameter: namespaceParameter,
-                plural: plural,
-                cancellationToken: cancellationToken
-            ).ConfigureAwait(false);
-            return KubernetesJson.Deserialize<T>(resp.Body.ToString());
+            //see https://github.com/kubernetes-client/csharp/discussions/1589
+            return operations.ListClusterCustomObjectAsync<T>(
+                group, version, plural, 
+                allowWatchBookmarks, continueParameter, fieldSelector, labelSelector, limit,
+                resourceVersion, resourceVersionMatch, 
+                timeoutSeconds, watch, pretty, cancellationToken
+            );
         }
 
+        public static Task<k8s.Autorest.HttpOperationResponse<object>> ListCustomObjectForAllNamespacesWithHttpMessagesAsync(
+            this ICustomObjectsOperations customObjects,
+            string group,
+            string version,
+            string plural,
+            bool? allowWatchBookmarks = null,
+            string? continueParameter = null,
+            string? fieldSelector = null,
+            string? labelSelector = null,
+            int? limit = null,
+            string? resourceVersion = null,
+            string? resourceVersionMatch = null,
+            int? timeoutSeconds = null,
+            bool? watch = null,
+            bool? pretty = null,
+            IReadOnlyDictionary<string, IReadOnlyList<string>>? customHeaders = null,
+            CancellationToken cancellationToken = default
+        )
+        {
+            //see https://github.com/kubernetes-client/csharp/discussions/1589
+            return customObjects.ListClusterCustomObjectWithHttpMessagesAsync(
+                group, version, plural, 
+                allowWatchBookmarks, continueParameter, 
+                fieldSelector, labelSelector,
+                limit, resourceVersion, resourceVersionMatch,
+                timeoutSeconds, watch, pretty,
+                customHeaders, cancellationToken);
+        }
 
         public static void CheckStatus(this V1Status status)
         {

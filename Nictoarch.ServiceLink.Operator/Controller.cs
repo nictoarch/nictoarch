@@ -14,6 +14,7 @@ using k8s;
 using k8s.Autorest;
 using k8s.Models;
 using Nictoarch.Common;
+using Nictoarch.ServiceLink.Operator.Resources;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Tokens;
 
@@ -21,7 +22,7 @@ namespace Nictoarch.ServiceLink.Operator
 {
     internal sealed class Controller : IAsyncDisposable
     {
-        internal const string GROUP = "servicelink.io";
+        internal const string GROUP = "servicelink.nictoarch.io";
         private const string VERSION = "v1";
         private const string PLURAL = "links";
         internal const string POLICY_LABEL = GROUP + "/from-link";
@@ -68,9 +69,8 @@ namespace Nictoarch.ServiceLink.Operator
 
         internal async Task<IDisposable> InitAsync()
         {
-            V1ServiceList serviceList = await this.m_client.CoreV1.ListNamespacedServiceAsync(this.m_settings.Namespace);
-            Task<HttpOperationResponse<V1ServiceList>> serviceListWatchTask = this.m_client.CoreV1.ListNamespacedServiceWithHttpMessagesAsync(
-                this.m_settings.Namespace,
+            V1ServiceList serviceList = await this.m_client.CoreV1.ListServiceForAllNamespacesAsync();
+            Task<HttpOperationResponse<V1ServiceList>> serviceListWatchTask = this.m_client.CoreV1.ListServiceForAllNamespacesWithHttpMessagesAsync(
                 watch: true,
                 resourceVersion: serviceList!.Metadata.ResourceVersion,
                 cancellationToken: this.m_tasksStopTokenSource.Token
@@ -80,12 +80,10 @@ namespace Nictoarch.ServiceLink.Operator
                 this.m_servicesReported.Add(service.Metadata.Uid, service);
             }
 
-            V1NetworkPolicyList policiesList = await this.m_client.NetworkingV1.ListNamespacedNetworkPolicyAsync(
-                namespaceParameter: this.m_settings.Namespace,
+            V1NetworkPolicyList policiesList = await this.m_client.NetworkingV1.ListNetworkPolicyForAllNamespacesAsync(
                 labelSelector: POLICY_LABEL
             );
-            Task<HttpOperationResponse<V1NetworkPolicyList>> policyListWatchTask = this.m_client.NetworkingV1.ListNamespacedNetworkPolicyWithHttpMessagesAsync(
-                this.m_settings.Namespace,
+            Task<HttpOperationResponse<V1NetworkPolicyList>> policyListWatchTask = this.m_client.NetworkingV1.ListNetworkPolicyForAllNamespacesWithHttpMessagesAsync(
                 labelSelector: POLICY_LABEL,
                 watch: true,
                 resourceVersion: policiesList!.Metadata.ResourceVersion,
@@ -96,16 +94,14 @@ namespace Nictoarch.ServiceLink.Operator
                 this.m_policiesReported.Add(policy.Metadata.Uid, policy);
             }
 
-            CustomResourceList<LinkResource> linksList = await this.m_client.ListNamespacedCustomObjectAsync<CustomResourceList<LinkResource>>(
+            CustomResourceList<LinkResource> linksList = await this.m_client.CustomObjects.ListCustomObjectForAllNamespacesAsync<CustomResourceList<LinkResource>>(
                 group: GROUP,
                 version: VERSION,
-                namespaceParameter: this.m_settings.Namespace,
                 plural: PLURAL
             );
-            Task<HttpOperationResponse<object>> linkListWatchTask = this.m_client.CustomObjects.ListNamespacedCustomObjectWithHttpMessagesAsync(
+            Task<HttpOperationResponse<object>> linkListWatchTask = this.m_client.CustomObjects.ListCustomObjectForAllNamespacesWithHttpMessagesAsync(
                 group: GROUP,
                 version: VERSION,
-                namespaceParameter: this.m_settings.Namespace,
                 plural: PLURAL,
                 watch: true,
                 resourceVersion: linksList!.Metadata.ResourceVersion,
@@ -155,7 +151,7 @@ namespace Nictoarch.ServiceLink.Operator
 
                 try
                 {
-                    await ReadEventsAsync();
+                    await this.ReadEventsAsync();
                 }
                 catch (OperationCanceledException) when (this.m_stopTokenSource.IsCancellationRequested)
                 {
@@ -173,7 +169,7 @@ namespace Nictoarch.ServiceLink.Operator
             {
                 while (this.m_channel.Reader.TryRead(out EventWrapper? eventWrapper))
                 {
-                    ApplyEvent(eventWrapper);
+                    this.ApplyEvent(eventWrapper);
                 }
 
                 using (CancellationTokenSource timeoutSource = new CancellationTokenSource(this.m_settings.BatchEventDelayMs))
@@ -196,13 +192,13 @@ namespace Nictoarch.ServiceLink.Operator
             switch (eventWrapper.obj)
             {
             case V1Service service:
-                ApplyEvent(eventWrapper.eventType, service, this.m_servicesReported);
+                this.ApplyEvent(eventWrapper.eventType, service, this.m_servicesReported);
                 break;
             case V1NetworkPolicy policy:
-                ApplyEvent(eventWrapper.eventType, policy, this.m_policiesReported);
+                this.ApplyEvent(eventWrapper.eventType, policy, this.m_policiesReported);
                 break;
             case LinkResource link:
-                ApplyEvent(eventWrapper.eventType, link, this.m_linksReported);
+                this.ApplyEvent(eventWrapper.eventType, link, this.m_linksReported);
                 break;
             default:
                 throw new Exception("Unexpected type " + eventWrapper.obj.GetType().Name);
@@ -254,16 +250,16 @@ namespace Nictoarch.ServiceLink.Operator
             {
                 string egressPolicyNamespacedName = link.GetEgressPolicyNamespacedName();
                 string ingressPolicyNamespacedName = link.GetIngressPolicyNamespacedName();
-                ServiceState egressServiceState = GetService(link.GetEgressPolicyServiceNamespacedName(), out V1Service? egressService);
-                ServiceState ingressServiceState = GetService(link.GetIngressPolicyServiceNamespacedName(), out V1Service? ingressService);
+                ServiceState egressServiceState = this.GetService(link.GetEgressPolicyServiceNamespacedName(), out V1Service? egressService);
+                ServiceState ingressServiceState = this.GetService(link.GetIngressPolicyServiceNamespacedName(), out V1Service? ingressService);
                 PolicyState egressPolicyState;
                 PolicyState ingressPolicyState;
 
                 if (egressServiceState != ServiceState.Ok || ingressServiceState != ServiceState.Ok)
                 {
                     //only if both services exist and have selectors, we are able to construct a policy (for now)
-                    await DeletePolicyIfExistsAsync(egressPolicyNamespacedName);
-                    await DeletePolicyIfExistsAsync(ingressPolicyNamespacedName);
+                    await this.DeletePolicyIfExistsAsync(egressPolicyNamespacedName);
+                    await this.DeletePolicyIfExistsAsync(ingressPolicyNamespacedName);
                     if (!checkedPolicies.Add(egressPolicyNamespacedName))
                     {
                         throw new Exception("Checking same policy twice: " + egressPolicyNamespacedName);
@@ -277,8 +273,8 @@ namespace Nictoarch.ServiceLink.Operator
                 }
                 else
                 {
-                    egressPolicyState = await ReconcileNetworkPolicyAsync(egressPolicyNamespacedName, checkedPolicies, this.CreateEgressPolicy(link, egressService!, ingressService!));
-                    ingressPolicyState = await ReconcileNetworkPolicyAsync(ingressPolicyNamespacedName, checkedPolicies, this.CreateIngressPolicy(link, egressService!, ingressService!));
+                    egressPolicyState = await this.ReconcileNetworkPolicyAsync(egressPolicyNamespacedName, checkedPolicies, this.CreateEgressPolicy(link, egressService!, ingressService!));
+                    ingressPolicyState = await this.ReconcileNetworkPolicyAsync(ingressPolicyNamespacedName, checkedPolicies, this.CreateIngressPolicy(link, egressService!, ingressService!));
                 }
 
                 if (link.UpdateState(egressServiceState, ingressServiceState, egressPolicyState, ingressPolicyState))
@@ -316,7 +312,7 @@ namespace Nictoarch.ServiceLink.Operator
                     //delete already requested
                     continue;
                 }
-                await DeletePolicyAsync(key, policy);
+                await this.DeletePolicyAsync(key, policy);
             }
         }
 
@@ -356,7 +352,7 @@ namespace Nictoarch.ServiceLink.Operator
 
             if (policyToDelete != null)
             {
-                await DeletePolicyAsync(policyNamespacedName, policyToDelete);
+                await this.DeletePolicyAsync(policyNamespacedName, policyToDelete);
             }
         }
 

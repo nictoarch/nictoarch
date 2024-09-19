@@ -3,7 +3,7 @@ using k8s.Models;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Nictoarch.ServiceLink.Operator
+namespace Nictoarch.ServiceLink.Operator.Resources
 {
     public abstract class CustomResource : KubernetesObject, IMetadata<V1ObjectMeta>
     {

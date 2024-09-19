@@ -10,7 +10,6 @@ namespace Nictoarch.ServiceLink.Operator
     {
         private Values m_values = new Values();
 
-        internal string Namespace => this.m_values.namespaceParam ?? "";
         internal int BatchEventDelayMs => this.m_values.batchEventDelayMs;
         internal int OperationTimeoutMs => this.m_values.operationTimeoutMs;
         internal double RequestExpirationSeconds => this.m_values.requestExpirationSeconds;
@@ -18,7 +17,6 @@ namespace Nictoarch.ServiceLink.Operator
 
         private sealed class Values
         {
-            public string? namespaceParam { get; set; } = "";
             public int batchEventDelayMs { get; set; } = 500;
             public int operationTimeoutMs { get; set; } = 500;
             public double requestExpirationSeconds { get; set; } = 5.0;
