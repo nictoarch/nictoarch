@@ -9,7 +9,7 @@ using k8s;
 
 namespace Nictoarch.ServiceLink.Operator.Resources
 {
-    public class LinkResource : CustomResource<LinkResourceSpec, LinkResourceStatus>
+    public sealed class LinkResource : CustomResource<LinkResourceSpec, LinkResourceStatus>
     {
         public override string ToString()
         {
@@ -97,6 +97,14 @@ namespace Nictoarch.ServiceLink.Operator.Resources
         public override string ToString()
         {
             return "state: " + state;
+        }
+    }
+
+    public sealed class LinkResourceList: KubernetesList<LinkResource>, IKubernetesObject<V1ListMeta>, IItems<LinkResource>
+    {
+        public LinkResourceList(IList<LinkResource> items, string apiVersion = default!, string kind = default!, V1ListMeta metadata = default!) 
+            : base(items, apiVersion, kind, metadata)
+        {
         }
     }
 }

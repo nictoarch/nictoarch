@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace Nictoarch.ServiceLink.Operator.Resources
 {
-    public abstract class CustomResource : KubernetesObject, IMetadata<V1ObjectMeta>
+    public abstract class CustomResource : KubernetesObject, IKubernetesObject<V1ObjectMeta>
     {
         [JsonPropertyName("metadata")]
         public V1ObjectMeta Metadata { get; set; } = default!;
@@ -18,12 +18,5 @@ namespace Nictoarch.ServiceLink.Operator.Resources
 
         [JsonPropertyName("status")]
         public TStatus Status { get; set; } = default!;
-    }
-
-    public class CustomResourceList<T> : KubernetesObject
-        where T : CustomResource
-    {
-        public V1ListMeta Metadata { get; set; } = default!;
-        public List<T> Items { get; set; } = default!;
     }
 }

@@ -39,7 +39,7 @@ namespace Nictoarch.ServiceLink.Operator
             );
         }
 
-        public static Task<k8s.Autorest.HttpOperationResponse<object>> ListCustomObjectForAllNamespacesWithHttpMessagesAsync(
+        public static Task<k8s.Autorest.HttpOperationResponse<T>> ListCustomObjectForAllNamespacesWithHttpMessagesAsync<T>(
             this ICustomObjectsOperations customObjects,
             string group,
             string version,
@@ -59,7 +59,7 @@ namespace Nictoarch.ServiceLink.Operator
         )
         {
             //see https://github.com/kubernetes-client/csharp/discussions/1589
-            return customObjects.ListClusterCustomObjectWithHttpMessagesAsync(
+            return customObjects.ListClusterCustomObjectWithHttpMessagesAsync<T>(
                 group, version, plural, 
                 allowWatchBookmarks, continueParameter, 
                 fieldSelector, labelSelector,

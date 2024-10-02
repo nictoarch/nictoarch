@@ -132,7 +132,7 @@ namespace Nictoarch.Common
         {
             task.ContinueWith(
                 continuationAction: c => HandleFatalException(c.Exception!, ExceptionSource.ProgramHelper_FailFastOnException),
-                continuationOptions: TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously
+                continuationOptions: TaskContinuationOptions.NotOnRanToCompletion | TaskContinuationOptions.ExecuteSynchronously
             );
             return task;
         }

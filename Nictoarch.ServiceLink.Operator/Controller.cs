@@ -15,6 +15,7 @@ using k8s.Autorest;
 using k8s.Models;
 using Nictoarch.Common;
 using Nictoarch.ServiceLink.Operator.Resources;
+using NLog;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Tokens;
 
@@ -28,7 +29,9 @@ namespace Nictoarch.ServiceLink.Operator
         internal const string POLICY_LABEL = GROUP + "/from-link";
         internal const string K8S_MANAGED_BY_LABEL = "app.kubernetes.io/managed-by";
         internal const string K8S_NAME_LABEL = "kubernetes.io/metadata.name";
+
         private readonly Settings m_settings;
+        private readonly Logger m_logger = LogManager.GetCurrentClassLogger();
 
         //all keys are NamespacedNames, see K8sExtensions.GetNamespacedName()
         private readonly Dictionary<string, V1Service> m_servicesReported = new Dictionary<string, V1Service>();
@@ -39,11 +42,8 @@ namespace Nictoarch.ServiceLink.Operator
 
         private readonly Channel<EventWrapper> m_channel = Channel.CreateUnbounded<EventWrapper>();
 
-        private readonly CancellationTokenSource m_tasksStopTokenSource = new CancellationTokenSource();
         private readonly CancellationTokenSource m_stopTokenSource = new CancellationTokenSource();
         private readonly IKubernetes m_client;
-        private Task m_bgTasks = Task.CompletedTask;
-        private Task m_catchBgTasksErrorTask = Task.CompletedTask;
 
         internal Controller(Settings settings)
         {
@@ -52,10 +52,12 @@ namespace Nictoarch.ServiceLink.Operator
             KubernetesClientConfiguration config;
             if (KubernetesClientConfiguration.IsInCluster())
             {
+                this.m_logger.Trace("Running with in-cluster config");
                 config = KubernetesClientConfiguration.InClusterConfig();
             }
             else
             {
+                this.m_logger.Trace("Running with default config file from " + KubernetesClientConfiguration.KubeConfigDefaultLocation);
                 config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
             }
 
@@ -69,86 +71,106 @@ namespace Nictoarch.ServiceLink.Operator
 
         internal async Task<IDisposable> InitAsync()
         {
+            this.m_logger.Trace("listing Services");
             V1ServiceList serviceList = await this.m_client.CoreV1.ListServiceForAllNamespacesAsync();
             Task<HttpOperationResponse<V1ServiceList>> serviceListWatchTask = this.m_client.CoreV1.ListServiceForAllNamespacesWithHttpMessagesAsync(
                 watch: true,
-                resourceVersion: serviceList!.Metadata.ResourceVersion,
-                cancellationToken: this.m_tasksStopTokenSource.Token
+                resourceVersion: serviceList!.Metadata.ResourceVersion
             );
             foreach (V1Service service in serviceList.Items)
             {
                 this.m_servicesReported.Add(service.Metadata.Uid, service);
             }
 
+            this.m_logger.Trace("listing NetworkPolicies");
             V1NetworkPolicyList policiesList = await this.m_client.NetworkingV1.ListNetworkPolicyForAllNamespacesAsync(
                 labelSelector: POLICY_LABEL
             );
             Task<HttpOperationResponse<V1NetworkPolicyList>> policyListWatchTask = this.m_client.NetworkingV1.ListNetworkPolicyForAllNamespacesWithHttpMessagesAsync(
                 labelSelector: POLICY_LABEL,
                 watch: true,
-                resourceVersion: policiesList!.Metadata.ResourceVersion,
-                cancellationToken: this.m_tasksStopTokenSource.Token
+                resourceVersion: policiesList!.Metadata.ResourceVersion
             );
             foreach (V1NetworkPolicy policy in policiesList.Items)
             {
                 this.m_policiesReported.Add(policy.Metadata.Uid, policy);
             }
 
-            CustomResourceList<LinkResource> linksList = await this.m_client.CustomObjects.ListCustomObjectForAllNamespacesAsync<CustomResourceList<LinkResource>>(
+            this.m_logger.Trace("listing Link custom resources");
+            LinkResourceList linksList = await this.m_client.CustomObjects.ListCustomObjectForAllNamespacesAsync<LinkResourceList>(
                 group: GROUP,
                 version: VERSION,
                 plural: PLURAL
             );
-            Task<HttpOperationResponse<object>> linkListWatchTask = this.m_client.CustomObjects.ListCustomObjectForAllNamespacesWithHttpMessagesAsync(
+            Task<HttpOperationResponse<LinkResourceList>> linkListWatchTask = this.m_client.CustomObjects.ListCustomObjectForAllNamespacesWithHttpMessagesAsync<LinkResourceList>(
                 group: GROUP,
                 version: VERSION,
                 plural: PLURAL,
                 watch: true,
-                resourceVersion: linksList!.Metadata.ResourceVersion,
-                cancellationToken: this.m_tasksStopTokenSource.Token
+                resourceVersion: linksList!.Metadata.ResourceVersion
             );
             foreach (LinkResource link in linksList.Items)
             {
                 this.m_linksReported.Add(link.Metadata.Uid, link);
             }
 
-            Task[] allBgTasks = new Task[] { serviceListWatchTask, policyListWatchTask, linkListWatchTask };
-            this.m_bgTasks = Task.WhenAll(allBgTasks);
-            this.m_catchBgTasksErrorTask = Task.WhenAny(allBgTasks)
-                .ContinueWith((t) => {
-                    Task firstFinishedTask = t.Result;
-                    if (firstFinishedTask.IsFaulted)
-                    {
-                        //TODO: log something
-                        ProgramHelper.HandleFatalException(firstFinishedTask.Exception!, ProgramHelper.ExceptionSource.MainAction_Exception);
-                    }
-                });
+            this.m_logger.Trace("Starting watchers");
 
             return new WatcherCollection(
-                serviceListWatchTask.Watch<V1Service, V1ServiceList>(onEvent: OnEvent, onError: OnWatcherError),
-                policyListWatchTask.Watch<V1NetworkPolicy, V1NetworkPolicyList>(onEvent: OnEvent, onError: OnWatcherError),
-                linkListWatchTask.Watch<LinkResource, object>(onEvent: OnEvent, onError: OnWatcherError)
+                serviceListWatchTask.Watch<V1Service, V1ServiceList>(onEvent: OnWatcherEvent, onError: OnWatcherError, onClosed: OnWatcherClosed),
+                policyListWatchTask.Watch<V1NetworkPolicy, V1NetworkPolicyList>(onEvent: OnWatcherEvent, onError: OnWatcherError, onClosed: OnWatcherClosed),
+                linkListWatchTask.Watch<LinkResource, LinkResourceList>(onEvent: OnWatcherEvent, onError: OnWatcherError, onClosed: OnWatcherClosed)
             );
+        }
+
+        private void TerminateOnError(Exception ex)
+        {
+            ProgramHelper.HandleFatalException(ex, ProgramHelper.ExceptionSource.MainAction_Exception);
+        }
+
+        private void OnWatcherClosed()
+        {
+            if (!this.m_stopTokenSource.IsCancellationRequested)
+            {
+                this.m_logger.Warn($"Got {nameof(OnWatcherClosed)}, terminating");
+                this.TerminateOnError(new Exception(nameof(OnWatcherClosed)));
+            }
+            else
+            {
+                this.m_logger.Trace($"Got {nameof(OnWatcherClosed)} during termination");
+            }
         }
 
         private void OnWatcherError(Exception ex)
         {
-            //TODO: log something
-            ProgramHelper.HandleFatalException(ex, ProgramHelper.ExceptionSource.MainAction_Exception);
+            if (!this.m_stopTokenSource.IsCancellationRequested)
+            {
+                this.m_logger.Warn(ex, $"Got {nameof(OnWatcherError)}: {ex.Message}, terminating");
+                this.TerminateOnError(ex);
+            }
+            else
+            {
+                this.m_logger.Trace($"Got {nameof(OnWatcherError)}: {ex.Message} during termination");
+            }
         }
 
-        private void OnEvent<T>(WatchEventType eventType, T resource)
-            where T : IMetadata<V1ObjectMeta>
+        private void OnWatcherEvent<T>(WatchEventType eventType, T resource)
+            where T : IKubernetesObject<V1ObjectMeta>
         {
-            this.m_channel.Writer.TryWrite(new EventWrapper(eventType, resource));
+            if (!this.m_channel.Writer.TryWrite(new EventWrapper(eventType, resource)))
+            {
+                if (!this.m_stopTokenSource.IsCancellationRequested)
+                {
+                    this.m_logger.Warn($"Failed to push watcher event ({eventType}: {resource?.Kind} {resource?.Metadata?.NamespaceProperty} {resource?.Metadata?.Name}) through the channel");
+                    this.TerminateOnError(new Exception("Failed to push event"));
+                }
+            }
         }
 
         internal async Task RunAsync()
         {
             while (!this.m_stopTokenSource.IsCancellationRequested)
             {
-                await this.Reconcile();
-
                 try
                 {
                     await this.ReadEventsAsync();
@@ -157,6 +179,8 @@ namespace Nictoarch.ServiceLink.Operator
                 {
                     break;
                 }
+
+                await this.Reconcile();
             }
         }
 
@@ -165,10 +189,12 @@ namespace Nictoarch.ServiceLink.Operator
             await this.m_channel.Reader.WaitToReadAsync(this.m_stopTokenSource.Token);
             //stopping would throw and interrupt
 
-            while (true) //TODO: maybe add some limit on iterations count?
+            int iteration = 0;
+            while (iteration < this.m_settings.MaxBatchSize)
             {
-                while (this.m_channel.Reader.TryRead(out EventWrapper? eventWrapper))
+                while (this.m_channel.Reader.TryRead(out EventWrapper? eventWrapper) && iteration < this.m_settings.MaxBatchSize)
                 {
+                    ++iteration;
                     this.ApplyEvent(eventWrapper);
                 }
 
@@ -184,6 +210,11 @@ namespace Nictoarch.ServiceLink.Operator
                         break;
                     }
                 }
+            }
+
+            if (iteration >= this.m_settings.MaxBatchSize)
+            {
+                this.m_logger.Warn($"Iteration limit of {iteration} reached in {nameof(ReadEventsAsync)}, should not happen");
             }
         }
 
@@ -201,7 +232,7 @@ namespace Nictoarch.ServiceLink.Operator
                 this.ApplyEvent(eventWrapper.eventType, link, this.m_linksReported);
                 break;
             default:
-                throw new Exception("Unexpected type " + eventWrapper.obj.GetType().Name);
+                throw new Exception($"Unexpected type {eventWrapper.obj.GetType().Name} ({eventWrapper.obj.Kind})");
             }
         }
 
@@ -230,6 +261,8 @@ namespace Nictoarch.ServiceLink.Operator
 
         private async Task Reconcile()
         {
+            this.m_logger.Trace("Running reconcile step");
+
             //remove expired requests
             {
                 DateTime now = DateTime.Now;
@@ -544,35 +577,11 @@ namespace Nictoarch.ServiceLink.Operator
             return result;
         }
 
-        public async ValueTask DisposeAsync()
+        public ValueTask DisposeAsync()
         {
-            this.m_tasksStopTokenSource.Cancel();
-
-            try
-            {
-                await this.m_bgTasks;
-            }
-            catch (OperationCanceledException)
-            {
-                //ignore this
-            }
-            catch (Exception)
-            {
-                //and probably this
-            }
-
-            try
-            {
-                await this.m_catchBgTasksErrorTask;
-            }
-            catch (Exception)
-            {
-                //nothing to do
-            }
-
             this.m_client.Dispose();
-            this.m_tasksStopTokenSource.Dispose();
             this.m_stopTokenSource.Dispose();
+            return ValueTask.CompletedTask;
         }
 
         private sealed class WatcherCollection : IDisposable
@@ -593,8 +602,16 @@ namespace Nictoarch.ServiceLink.Operator
             }
         }
 
-        private sealed record EventWrapper(WatchEventType eventType, IMetadata<V1ObjectMeta> obj)
+        private sealed class EventWrapper
         {
+            internal readonly WatchEventType eventType;
+            internal readonly IKubernetesObject<V1ObjectMeta> obj;
+
+            internal EventWrapper(WatchEventType eventType, IKubernetesObject<V1ObjectMeta> obj)
+            {
+                this.eventType = eventType;
+                this.obj = obj;
+            }
         }
 
         private sealed class RequestedPolicy
