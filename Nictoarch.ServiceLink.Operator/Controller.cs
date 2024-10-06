@@ -81,6 +81,7 @@ namespace Nictoarch.ServiceLink.Operator
             {
                 this.m_servicesReported.Add(service.Metadata.Uid, service);
             }
+            this.m_logger.Trace($"Got {this.m_servicesReported.Count} initial services");
 
             this.m_logger.Trace("listing NetworkPolicies");
             V1NetworkPolicyList policiesList = await this.m_client.NetworkingV1.ListNetworkPolicyForAllNamespacesAsync(
@@ -95,6 +96,7 @@ namespace Nictoarch.ServiceLink.Operator
             {
                 this.m_policiesReported.Add(policy.Metadata.Uid, policy);
             }
+            this.m_logger.Trace($"Got {this.m_policiesReported.Count} initial managed network policies");
 
             this.m_logger.Trace("listing Link custom resources");
             LinkResourceList linksList = await this.m_client.CustomObjects.ListCustomObjectForAllNamespacesAsync<LinkResourceList>(
@@ -113,6 +115,7 @@ namespace Nictoarch.ServiceLink.Operator
             {
                 this.m_linksReported.Add(link.Metadata.Uid, link);
             }
+            this.m_logger.Trace($"Got {this.m_linksReported.Count} initial links");
 
             this.m_logger.Trace("Starting watchers");
 
@@ -169,6 +172,11 @@ namespace Nictoarch.ServiceLink.Operator
 
         internal async Task RunAsync()
         {
+            if (!this.m_stopTokenSource.IsCancellationRequested)
+            {
+                await this.Reconcile();
+            }
+
             while (!this.m_stopTokenSource.IsCancellationRequested)
             {
                 try
@@ -283,38 +291,30 @@ namespace Nictoarch.ServiceLink.Operator
             {
                 string egressPolicyNamespacedName = link.GetEgressPolicyNamespacedName();
                 string ingressPolicyNamespacedName = link.GetIngressPolicyNamespacedName();
-                ServiceState egressServiceState = this.GetService(link.GetEgressPolicyServiceNamespacedName(), out V1Service? egressService);
-                ServiceState ingressServiceState = this.GetService(link.GetIngressPolicyServiceNamespacedName(), out V1Service? ingressService);
+                ServiceState egressServiceState = this.GetService(link.GetEgressPolicyServiceNamespacedName(), link, out V1Service? egressService);
+                ServiceState ingressServiceState = this.GetService(link.GetIngressPolicyServiceNamespacedName(), link, out V1Service? ingressService);
+                
                 PolicyState egressPolicyState;
                 PolicyState ingressPolicyState;
-
+                //only if both services exist and have selectors, we are able to construct a policy (for now)
                 if (egressServiceState != ServiceState.Ok || ingressServiceState != ServiceState.Ok)
                 {
-                    //only if both services exist and have selectors, we are able to construct a policy (for now)
-                    await this.DeletePolicyIfExistsAsync(egressPolicyNamespacedName);
-                    await this.DeletePolicyIfExistsAsync(ingressPolicyNamespacedName);
-                    if (!checkedPolicies.Add(egressPolicyNamespacedName))
-                    {
-                        throw new Exception("Checking same policy twice: " + egressPolicyNamespacedName);
-                    }
-                    if (!checkedPolicies.Add(ingressPolicyNamespacedName))
-                    {
-                        throw new Exception("Checking same policy twice: " + ingressPolicyNamespacedName);
-                    }
-                    egressPolicyState = PolicyState.Removed;
-                    ingressPolicyState = PolicyState.Removed;
+                    //something not ok
+                    egressPolicyState = await this.ProcessDeleteNetworkPolicyIfExistsAsync(egressPolicyNamespacedName, checkedPolicies);
+                    ingressPolicyState = await this.ProcessDeleteNetworkPolicyIfExistsAsync(ingressPolicyNamespacedName, checkedPolicies);
                 }
                 else
                 {
-                    egressPolicyState = await this.ReconcileNetworkPolicyAsync(egressPolicyNamespacedName, checkedPolicies, this.CreateEgressPolicy(link, egressService!, ingressService!));
-                    ingressPolicyState = await this.ReconcileNetworkPolicyAsync(ingressPolicyNamespacedName, checkedPolicies, this.CreateIngressPolicy(link, egressService!, ingressService!));
+                    egressPolicyState = await this.ReconcileNetworkPolicyAsync(egressPolicyNamespacedName, checkedPolicies, this.CreateEgressPolicyObject(link, egressService!, ingressService!));
+                    ingressPolicyState = await this.ReconcileNetworkPolicyAsync(ingressPolicyNamespacedName, checkedPolicies, this.CreateIngressPolicyObject(link, egressService!, ingressService!));
                 }
 
                 if (link.UpdateState(egressServiceState, ingressServiceState, egressPolicyState, ingressPolicyState))
                 {
+                    this.m_logger.Trace("Requesting status update for Link " + link.GetNamespacedName());
                     using (CancellationTokenSource timeoutSource = new CancellationTokenSource(this.m_settings.OperationTimeoutMs))
                     {
-                        object result = await this.m_client.CustomObjects.ReplaceNamespacedCustomObjectStatusAsync(
+                        LinkResource result = await this.m_client.CustomObjects.ReplaceNamespacedCustomObjectStatusAsync<LinkResource>(
                             body: link,
                             group: GROUP,
                             version: VERSION,
@@ -322,8 +322,8 @@ namespace Nictoarch.ServiceLink.Operator
                             plural: PLURAL,
                             name: link.Metadata.Name
                         );
-                        //here result is probably an updated link
-                        //TODO: update resource version = update link in the m_reportedLinks or wait for it to come from server reports
+                        //here result is an updated link
+                        //TODO: update resource version = update link in the m_reportedLinks or wait for it to come from server reports?
                     }
                 }
             }
@@ -345,12 +345,13 @@ namespace Nictoarch.ServiceLink.Operator
                     //delete already requested
                     continue;
                 }
-                await this.DeletePolicyAsync(key, policy);
+                await this.DeleteNetworkPolicyAsync(key, policy);
             }
         }
 
-        private async Task DeletePolicyAsync(string policyNamespacedName, V1NetworkPolicy policy)
+        private async Task DeleteNetworkPolicyAsync(string policyNamespacedName, V1NetworkPolicy policy)
         {
+            this.m_logger.Trace("Requesting deletion of network policy " + policy.GetNamespacedName());
             using (CancellationTokenSource timeoutSource = new CancellationTokenSource(this.m_settings.OperationTimeoutMs))
             {
                 this.m_policiesRequested[policyNamespacedName] = new RequestedPolicy() {
@@ -368,8 +369,13 @@ namespace Nictoarch.ServiceLink.Operator
             }
         }
 
-        private async Task DeletePolicyIfExistsAsync(string policyNamespacedName)
+        private async Task<PolicyState> ProcessDeleteNetworkPolicyIfExistsAsync(string policyNamespacedName, HashSet<string> checkedPolicies)
         {
+            if (!checkedPolicies.Add(policyNamespacedName))
+            {
+                throw new Exception("Checking same policy twice: " + policyNamespacedName);
+            }
+
             V1NetworkPolicy? policyToDelete = null;
             if (this.m_policiesRequested.TryGetValue(policyNamespacedName, out RequestedPolicy? requested))
             {
@@ -385,18 +391,22 @@ namespace Nictoarch.ServiceLink.Operator
 
             if (policyToDelete != null)
             {
-                await this.DeletePolicyAsync(policyNamespacedName, policyToDelete);
+                await this.DeleteNetworkPolicyAsync(policyNamespacedName, policyToDelete);
             }
+
+            return PolicyState.Removed;
         }
 
-        private ServiceState GetService(string serviceNamespacedName, out V1Service? service)
+        private ServiceState GetService(string serviceNamespacedName, LinkResource link, out V1Service? service)
         {
             if (!this.m_servicesReported.TryGetValue(serviceNamespacedName, out service))
             {
+                this.m_logger.Warn($"No service {serviceNamespacedName} found, requested by Link {link.GetNamespacedName()}");
                 return ServiceState.NotFound;
             }
             else if (service.Spec.Selector == null || service.Spec.Selector.Count == 0)
             {
+                this.m_logger.Warn($"Service {serviceNamespacedName} requested by Link {link.GetNamespacedName()} has no label selector for pods");
                 return ServiceState.NoSelector;
             }
             else
@@ -426,7 +436,7 @@ namespace Nictoarch.ServiceLink.Operator
             {
                 if (!requestedPolicy.deleteRequested)
                 {
-                    if (PolicyComparer.Compare(expectedPolicy, requestedPolicy.policy))
+                    if (NetworkPolicyComparer.Compare(expectedPolicy, requestedPolicy.policy))
                     {
                         //no need to do anything, already requested consistent egress policy
                         return PolicyState.Consistent;
@@ -439,7 +449,7 @@ namespace Nictoarch.ServiceLink.Operator
             }
             else if (this.m_policiesReported.TryGetValue(policyNamespacedName, out V1NetworkPolicy? reportedPolicy))
             {
-                if (PolicyComparer.Compare(expectedPolicy, reportedPolicy))
+                if (NetworkPolicyComparer.Compare(expectedPolicy, reportedPolicy))
                 {
                     //no need to change current policy
                     return PolicyState.Consistent;
@@ -455,6 +465,7 @@ namespace Nictoarch.ServiceLink.Operator
                 V1NetworkPolicy createdPolicy;
                 if (oldPolicy != null)
                 {
+                    this.m_logger.Trace($"Replacing network policy {expectedPolicy.GetNamespacedName()}");
                     expectedPolicy.Metadata.ResourceVersion = oldPolicy.Metadata.ResourceVersion;
                     createdPolicy = await this.m_client.NetworkingV1.ReplaceNamespacedNetworkPolicyAsync(
                         body: expectedPolicy,
@@ -465,6 +476,7 @@ namespace Nictoarch.ServiceLink.Operator
                 }
                 else
                 {
+                    this.m_logger.Trace($"Creating network policy {expectedPolicy.GetNamespacedName()}");
                     createdPolicy = await this.m_client.NetworkingV1.CreateNamespacedNetworkPolicyAsync(
                         body: expectedPolicy,
                         namespaceParameter: expectedPolicy.Metadata.NamespaceProperty,
@@ -482,8 +494,8 @@ namespace Nictoarch.ServiceLink.Operator
         }
 
         //TODO: maybe add ownerReferences to policy?
-
-        private V1NetworkPolicy CreateEgressPolicy(LinkResource link, V1Service fromService, V1Service toService)
+        //TODO: allow adding additional labels and annotations to managed policies
+        private V1NetworkPolicy CreateEgressPolicyObject(LinkResource link, V1Service fromService, V1Service toService)
         {
             //https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#networkpolicyspec-v1-networking-k8s-io
 
@@ -530,7 +542,7 @@ namespace Nictoarch.ServiceLink.Operator
             return result;
         }
 
-        private V1NetworkPolicy CreateIngressPolicy(LinkResource link, V1Service fromService, V1Service toService)
+        private V1NetworkPolicy CreateIngressPolicyObject(LinkResource link, V1Service fromService, V1Service toService)
         {
             //https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#networkpolicyspec-v1-networking-k8s-io
 

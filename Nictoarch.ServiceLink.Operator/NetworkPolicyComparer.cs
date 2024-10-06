@@ -8,7 +8,7 @@ using k8s.Models;
 
 namespace Nictoarch.ServiceLink.Operator
 {
-    internal static class PolicyComparer
+    internal static class NetworkPolicyComparer
     {
         internal static bool Compare(V1NetworkPolicy expectedPolicy, V1NetworkPolicy existingPolicy)
         {
