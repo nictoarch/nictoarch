@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Net.Http.Headers;
 using System.Text;
 using Nictoarch.Modelling.Core.Spec;
+using Nictoarch.Modelling.Core.Yaml;
 
 namespace Nictoarch.Modelling.Json
 {
@@ -54,6 +55,7 @@ namespace Nictoarch.Modelling.Json
             }
         }
 
+        public BasePathAutoProperty base_path { get; set; } = default!; //automatically provided by the ModelSpecObjectFactory
         [Required] public string location { get; set; } = default!;
         public Auth? auth { get; set; }
     }

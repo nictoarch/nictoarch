@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.Core;
@@ -13,7 +14,7 @@ namespace Nictoarch.Modelling.Core.Yaml
 {
     // see https://github.com/aaubry/YamlDotNet/issues/202#issuecomment-830712803
     // see https://github.com/aaubry/YamlDotNet/wiki/Serialization.Deserializer#withnodedeserializer
-    public sealed class ValidatingDeserializer : INodeDeserializer
+    internal sealed class ValidatingDeserializer : INodeDeserializer
     {
         private readonly INodeDeserializer m_nodeDeserializer;
 

@@ -57,7 +57,8 @@ namespace Nictoarch.Modelling.Json
             }
             else
             {
-                using (Stream fileStream = new FileStream(sourceConfig.location, FileMode.Open, FileAccess.Read))
+                string path = Path.Combine(sourceConfig.base_path.path, sourceConfig.location);
+                using (Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read))
                 {
                     return await this.ReadStream(fileStream, cancellationToken);
                 }

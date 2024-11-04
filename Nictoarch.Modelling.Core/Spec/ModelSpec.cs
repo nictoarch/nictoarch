@@ -35,20 +35,22 @@ namespace Nictoarch.Modelling.Core.Spec
         {
             using (StreamReader reader = new StreamReader(fileName))
             {
-                return Load(reader, registry, basePath: Path.GetDirectoryName(fileName));
+                return ModelSpec.Load(reader, registry, basePath: Path.GetDirectoryName(fileName));
             }
         }
 
         public static ModelSpec Load(TextReader reader, SourceRegistry registry, string? basePath = null)
         {
-            ModelSpecObjectFactory modelSpecObjectFactory = new ModelSpecObjectFactory(registry);
+            basePath ??= Directory.GetCurrentDirectory();
+
+            ModelSpecObjectFactory modelSpecObjectFactory = new ModelSpecObjectFactory(registry, basePath);
 
             DeserializerBuilder builder = new DeserializerBuilder()
                 .WithObjectFactory(modelSpecObjectFactory)
 
                 //see https://github.com/aaubry/YamlDotNet/wiki/Serialization.Deserializer#withnodedeserializer
                 .WithNodeDeserializer(
-                    nodeDeserializerFactory: innerDeserialzier => new ValidatingDeserializer(innerDeserialzier),
+                    nodeDeserializerFactory: innerDeserialzier => new ValidatingDeserializer(new AutoPropertyDeserializer(innerDeserialzier, modelSpecObjectFactory)),
                     where: syntax => syntax.InsteadOf<ObjectNodeDeserializer>()
                 )
 
@@ -56,7 +58,7 @@ namespace Nictoarch.Modelling.Core.Spec
 
                 .WithTagMapping(YamlnplaceNodeDeserializer.TAG, typeof(object)) // tag needs to be registered so that validation passes
                 .WithNodeDeserializer(
-                    new YamlnplaceNodeDeserializer(basePath ?? Directory.GetCurrentDirectory()),
+                    new YamlnplaceNodeDeserializer(basePath),
                     where: syntax => syntax.OnTop()
                 )
                 .WithTagMapping(YamEnvNodeDeserializer.TAG, typeof(string))     // tag needs to be registered so that validation passes

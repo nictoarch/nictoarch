@@ -18,6 +18,7 @@ namespace Nictoarch.Modelling.Core.Yaml
     {
         private readonly IObjectFactory m_fallback;
         private readonly SourceRegistry m_registry;
+        private readonly string m_basePath;
 
         private readonly Stack<SourceRegistry.SourceFactoryWrapper> m_factoryStack = new Stack<SourceRegistry.SourceFactoryWrapper>();
         private SourceRegistry.SourceFactoryWrapper? m_currentFactory = null;
@@ -39,16 +40,21 @@ namespace Nictoarch.Modelling.Core.Yaml
             }
         }
 
-        public ModelSpecObjectFactory(SourceRegistry registry)
+        public ModelSpecObjectFactory(SourceRegistry registry, string basePath)
         {
             this.m_fallback = new DefaultObjectFactory();
             this.m_registry = registry;
+            this.m_basePath = basePath;
             this.Discriminator = new TypeDiscriminator(this);
         }
 
-        object IObjectFactory.Create(Type type)
+        //IObjectFactory
+        public object Create(Type type)
         {
-            object result = this.m_fallback.Create(type);
+            if (type == typeof(BasePathAutoProperty))
+            {
+                return new BasePathAutoProperty(this.m_basePath);
+            }
 
             if (typeof(SourceConfigBase).IsAssignableFrom(type))
             {
@@ -64,7 +70,8 @@ namespace Nictoarch.Modelling.Core.Yaml
                     this.m_factoryStack.Push(this.m_currentFactory);
                 }
             }
-
+            
+            object result = this.m_fallback.Create(type);
             return result;
         }
 
