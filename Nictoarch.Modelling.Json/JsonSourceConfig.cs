@@ -4,11 +4,60 @@ using System.Net.Http.Headers;
 using System.Text;
 using Nictoarch.Modelling.Core.Spec;
 using Nictoarch.Modelling.Core.Yaml;
+using YamlDotNet.Core;
+using YamlDotNet.Core.Events;
 
 namespace Nictoarch.Modelling.Json
 {
-    public sealed class JsonSourceConfig: SourceConfigBase
+    public sealed class JsonSourceConfig: SourceConfigBase, IYamlOnDeserialized
     {
+        public FileSource? file { get; set; }
+        public HttpSource? http { get; set; }
+        public InplaceSource? inplace { get; set; }
+
+        public void OnDeserialized(ParsingEvent parsingEvent)
+        {
+            int sourcesCount = 0;
+            if (this.file != null)
+            {
+                ++sourcesCount;
+            }
+            if (this.http != null)
+            {
+                ++sourcesCount;
+            }
+            if (this.inplace != null)
+            {
+                ++sourcesCount;
+            }
+
+            if (sourcesCount == 0)
+            {
+                throw new YamlException(parsingEvent.Start, parsingEvent.End, $"For json source a data source should be specified: {nameof(this.file)}, {nameof(this.http)}, {nameof(this.inplace)}");
+            }
+            else if (sourcesCount > 1)
+            {
+                throw new YamlException(parsingEvent.Start, parsingEvent.End, $"For json source only one data source should be specified: {nameof(this.file)}, {nameof(this.http)}, {nameof(this.inplace)}");
+            }
+        }
+
+        public sealed class FileSource
+        {
+            public BasePathAutoProperty base_path { get; set; } = default!; //automatically provided by the ModelSpecObjectFactory
+            [Required] public string path { get; set; } = default!;
+        }
+
+        public sealed class HttpSource
+        {
+            public Auth? auth { get; set; }
+            [Required] public string url { get; set; } = default!;
+        }
+
+        public sealed class InplaceSource
+        {
+            [Required] public string value { get; set; } = default!;
+        }
+
         public abstract class Auth
         {
             [Required] public string type { get; set; } = default!;
@@ -54,9 +103,5 @@ namespace Nictoarch.Modelling.Json
                 );
             }
         }
-
-        public BasePathAutoProperty base_path { get; set; } = default!; //automatically provided by the ModelSpecObjectFactory
-        [Required] public string location { get; set; } = default!;
-        public Auth? auth { get; set; }
     }
 }

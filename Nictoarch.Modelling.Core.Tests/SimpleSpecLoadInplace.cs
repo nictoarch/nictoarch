@@ -3,9 +3,8 @@ using Nictoarch.Modelling.Core.Spec;
 
 namespace Nictoarch.Modelling.Core.Tests
 {
-    public class SimpleSpecLoad
+    public class SimpleSpecLoadInplace
     {
-
         [Test]
         public async Task SimpleSpecLoadTest()
         {

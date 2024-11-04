@@ -36,14 +36,14 @@ namespace Nictoarch.Modelling.Json
 
         private async Task<string> GetSourceDataString(JsonSourceConfig sourceConfig, CancellationToken cancellationToken)
         {
-            if (sourceConfig.location.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || sourceConfig.location.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            if (sourceConfig.http != null)
             {
                 using (HttpClient httpClient = new HttpClient())
-                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, sourceConfig.location))
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, sourceConfig.http.url))
                 {
-                    if (sourceConfig.auth != null)
+                    if (sourceConfig.http.auth != null)
                     {
-                        request.Headers.Authorization = sourceConfig.auth.CreateHeader();
+                        request.Headers.Authorization = sourceConfig.http.auth.CreateHeader();
                     }
                     using (HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken))
                     {
@@ -55,13 +55,21 @@ namespace Nictoarch.Modelling.Json
                     }
                 }
             }
-            else
+            else if (sourceConfig.file != null)
             {
-                string path = Path.Combine(sourceConfig.base_path.path, sourceConfig.location);
+                string path = Path.Combine(sourceConfig.file.base_path.path, sourceConfig.file.path);
                 using (Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read))
                 {
                     return await this.ReadStream(fileStream, cancellationToken);
                 }
+            }
+            else if (sourceConfig.inplace != null)
+            {
+                return sourceConfig.inplace.value;
+            }
+            else
+            {
+                throw new InvalidOperationException($"Should not happen, check {nameof(JsonSourceConfig.OnDeserialized)}()");
             }
         }
 

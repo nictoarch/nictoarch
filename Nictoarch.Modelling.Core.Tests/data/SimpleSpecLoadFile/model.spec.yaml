@@ -2,7 +2,8 @@
 data:
   - source:
       type: json
-      location: source.json
+      file:
+        path: source.json
     elements:
       - extract: 
           transform: none

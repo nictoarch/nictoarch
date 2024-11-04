@@ -1,0 +1,10 @@
+﻿name: Test model
+data:
+  - source:
+      type: json
+      file:
+        path: !inplace values.yaml#path
+    elements:
+      - extract: 
+          transform: none
+        entities: $

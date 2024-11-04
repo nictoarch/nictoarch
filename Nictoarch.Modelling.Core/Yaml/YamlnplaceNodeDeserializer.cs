@@ -137,7 +137,7 @@ namespace Nictoarch.Modelling.Core.Yaml
                 }
                 catch (Exception ex)
                 {
-                    throw new YamlException(scalar.Start, scalar.End, $"Failed to execute {TAG} query ({query}): {ex.Message}", ex);
+                    throw new YamlException(scalar.Start, scalar.End, $"Failed to execute {TAG} query '{query}' on file {filePath}: {ex.Message}", ex);
                 }
             }
 
