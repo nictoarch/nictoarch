@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http.Headers;
 using System.Text;
+using Nictoarch.Modelling.Core;
 using Nictoarch.Modelling.Core.Spec;
 using Nictoarch.Modelling.Core.Yaml;
 using YamlDotNet.Core;
@@ -41,21 +42,21 @@ namespace Nictoarch.Modelling.Json
             }
         }
 
-        public sealed class FileSource
+        public sealed class FileSource: IMaybeYamlSimpleValue
         {
             public BasePathAutoProperty base_path { get; set; } = default!; //automatically provided by the ModelSpecObjectFactory
-            [Required] public string path { get; set; } = default!;
+            [Required, YamlSimpleValue] public string path { get; set; } = default!;
         }
 
-        public sealed class HttpSource
+        public sealed class HttpSource: IMaybeYamlSimpleValue
         {
             public Auth? auth { get; set; }
-            [Required] public string url { get; set; } = default!;
+            [Required, YamlSimpleValue] public string url { get; set; } = default!;
         }
 
-        public sealed class InplaceSource
+        public sealed class InplaceSource: IMaybeYamlSimpleValue
         {
-            [Required] public string value { get; set; } = default!;
+            [Required, YamlSimpleValue] public string value { get; set; } = default!;
         }
 
         public abstract class Auth

@@ -1,0 +1,19 @@
+﻿name: Test model
+data:
+  - source:
+      type: json
+      inplace: | 
+          [
+            {
+              "type": "sample",
+              "id": "1"
+            },
+            {
+              "type": "sample",
+              "id": "2"
+            }
+          ]
+    elements:
+      - extract: 
+          transform: none
+        entities: $
