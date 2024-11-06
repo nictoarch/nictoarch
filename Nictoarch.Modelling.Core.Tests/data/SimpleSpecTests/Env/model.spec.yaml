@@ -1,0 +1,10 @@
+﻿name: Test model
+data:
+  - source:
+      type: json
+      file:
+        path: !env MY_ENV_VAR
+    elements:
+      - extract: 
+          transform: none
+        entities: $

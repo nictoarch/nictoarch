@@ -21,9 +21,32 @@ namespace Nictoarch.Modelling.Core.Tests
 
 
         [TestCaseSource(nameof(GetSimpleSpecTests))]
-        public async Task DoTest(string specFile)
+        public async Task DoTest(string testDir)
         {
+            string envFile = Path.Combine(testDir, "env.txt");
+            if (File.Exists(envFile))
+            {
+                foreach (string line in await File.ReadAllLinesAsync(envFile))
+                {
+                    if (String.IsNullOrWhiteSpace(line))
+                    {
+                        continue;
+                    }
+                    string[] parts = line.Split('=');
+                    if (parts.Length != 2)
+                    {
+                        throw new Exception($"Failed to parse env file {envFile}, line '{line}' does not have a form of <var_name>=<value>");
+                    }
+                    parts[0] = parts[0].Trim();
+                    parts[1] = parts[1].Trim();
+                    Console.WriteLine($"Setting env {parts[0]} = '{parts[1]}'");
+                    Environment.SetEnvironmentVariable(parts[0], parts[1]);
+                }
+            }
+
             SourceRegistry registry = new SourceRegistry();
+
+            string specFile = Path.Combine(testDir, "model.spec.yaml");
             Console.WriteLine("Loading model from " + specFile);
 
             ModelSpec modelSpec = ModelSpec.LoadFromFile(specFile, registry);
@@ -43,7 +66,7 @@ namespace Nictoarch.Modelling.Core.Tests
         {
             return Directory.EnumerateDirectories("../../../data/SimpleSpecTests")
                 .Select(path => {
-                    TestCaseData data = new TestCaseData(Path.Combine(path, "model.spec.yaml"));
+                    TestCaseData data = new TestCaseData(path);
                     data.SetName(Path.GetFileName(path));
                     return data;
                 });
