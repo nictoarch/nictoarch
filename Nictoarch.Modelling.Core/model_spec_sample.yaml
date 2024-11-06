@@ -1,13 +1,9 @@
-﻿name: Test model
+﻿# see also tests at Nictoarch.Modelling.Core.Tests/data
+name: Test model
 data:
   - source:  #source type is provider-specific
       type: json
-      location: "../../../../Nictoarch.Common.Xml2Json.Tests/data/drawio.small.xml"   #may also be a http(s) url
-      auth: none          # optional, used only in case of urls in location
-      # auth: 
-      #   type: basic
-      #   user: user
-      #   pass: pass
+      file: "../../../../Nictoarch.Common.Xml2Json.Tests/data/drawio.small.xml"   #may also be a http(s) url
     elements:
       # it is possible to not have an `extract` field in case source is already a json
       - extract: # extract element is provider-specific

@@ -22,11 +22,16 @@ namespace Nictoarch.Modelling.Core.Yaml
 
         bool INodeDeserializer.Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value, ObjectDeserializer rootDeserializer)
         {
-            if (!this.m_nodeDeserializer.Deserialize(parser, expectedType, nestedObjectDeserializer, out value, rootDeserializer)
-                    || value == null
-            )
+            YamlDotNet.Core.Events.ParsingEvent? currentEvent = parser.Current;
+
+            if (!this.m_nodeDeserializer.Deserialize(parser, expectedType, nestedObjectDeserializer, out value, rootDeserializer))
             {
                 return false;
+            }
+
+            if (value == null)
+            {
+                return true;
             }
 
             foreach (PropertyInfo prop in value.GetType().GetProperties().Where(p => p.CanWrite && p.PropertyType == typeof(BasePathAutoProperty)))
@@ -36,6 +41,8 @@ namespace Nictoarch.Modelling.Core.Yaml
                     prop.SetValue(value, this.m_objectFactory.Create(prop.PropertyType));
                 }
             }
+
+            NodeDeserializerValidationDeserializationHelper.Process(currentEvent!, value);
 
             return true;
         }

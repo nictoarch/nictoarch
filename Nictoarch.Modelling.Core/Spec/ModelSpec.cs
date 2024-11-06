@@ -50,15 +50,16 @@ namespace Nictoarch.Modelling.Core.Spec
 
                 //see https://github.com/aaubry/YamlDotNet/wiki/Serialization.Deserializer#withnodedeserializer
                 .WithNodeDeserializer(
-                    nodeDeserializerFactory: innerDeserialzier => 
-                        new ValidatingDeserializer(
-                            new AutoPropertyDeserializer(innerDeserialzier, modelSpecObjectFactory)
-                        ),
+                    nodeDeserializerFactory: innerDeserialzier => new AutoPropertyDeserializer(innerDeserialzier, modelSpecObjectFactory),
                     where: syntax => syntax.InsteadOf<ObjectNodeDeserializer>()
+                )
+                .WithNodeDeserializer(
+                    nodeDeserializerFactory: innerDeserialzier => new MaybeSimpleValueScalarNodeDeserializer(innerDeserialzier, modelSpecObjectFactory),
+                    where: syntax => syntax.InsteadOf<ScalarNodeDeserializer>()
                 )
 
                 .WithTypeConverter(new JsonataQueryYamlConverter())
-                .WithTypeConverter(new MaybeYamlSimpleValueConverter(modelSpecObjectFactory))
+                //.WithTypeConverter(new MaybeYamlSimpleValueConverter(modelSpecObjectFactory))
 
                 .WithTagMapping(YamlnplaceNodeDeserializer.TAG, typeof(object)) // tag needs to be registered so that validation passes
                 .WithNodeDeserializer(

@@ -14,23 +14,13 @@ namespace Nictoarch.Modelling.Core.Yaml
 {
     // see https://github.com/aaubry/YamlDotNet/issues/202#issuecomment-830712803
     // see https://github.com/aaubry/YamlDotNet/wiki/Serialization.Deserializer#withnodedeserializer
-    internal sealed class ValidatingDeserializer : INodeDeserializer
+    internal static class NodeDeserializerValidationDeserializationHelper
     {
-        private readonly INodeDeserializer m_nodeDeserializer;
-
-        public ValidatingDeserializer(INodeDeserializer internalDeserialzier)
+        public static void Process(ParsingEvent currentEvent, object value)
         {
-            this.m_nodeDeserializer = internalDeserialzier;
-        }
-
-        public bool Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value, ObjectDeserializer rootDeserializer)
-        {
-            ParsingEvent? currentEvent = parser.Current;
-            if (!this.m_nodeDeserializer.Deserialize(parser, expectedType, nestedObjectDeserializer, out value, rootDeserializer)
-                || value == null
-            )
+            if (value == null)
             {
-                return false;
+                return;
             }
 
             ValidationContext context = new ValidationContext(value, null, null);
@@ -52,10 +42,8 @@ namespace Nictoarch.Modelling.Core.Yaml
             //see https://github.com/aaubry/YamlDotNet/issues/785
             if (value is IYamlOnDeserialized deserializable)
             {
-                deserializable.OnDeserialized(currentEvent!);
+                deserializable.OnDeserialized(currentEvent);
             }
-
-            return true;
         }
     }
 }
