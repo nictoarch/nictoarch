@@ -3,7 +3,7 @@ data:
   - source:
       type: json
       file:
-        path: !inplace ./sub2/values.yaml#path
+        path: !inplace ./sub/values.yaml#path
     elements:
       - extract: 
           transform: none

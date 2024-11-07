@@ -2,8 +2,7 @@
 data:
   - source:
       type: json
-      file:
-        path: ./sub/source.json
+      http: https://raw.githubusercontent.com/nictoarch/nictoarch/refs/heads/main/Nictoarch.Modelling.Core.Tests/data/_src/sample.json
     elements:
       - extract: 
           transform: none

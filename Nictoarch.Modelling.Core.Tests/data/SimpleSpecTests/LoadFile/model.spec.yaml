@@ -3,7 +3,7 @@ data:
   - source:
       type: json
       file:
-        path: source.json
+        path: ../../_src/sample.json
     elements:
       - extract: 
           transform: none
