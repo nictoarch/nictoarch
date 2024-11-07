@@ -35,7 +35,18 @@ namespace Nictoarch.Modelling.Core.Yaml
         {
             if (parser.TryConsume<Scalar>(out _))
             {
-                //actually will not happen, but some type discriminator is needed to return query per field. 
+                //actually will not happen, EntitiesSelectorSingleQuery.Parse() will be used, but let's keep it here for consistency
+                suggestedType = typeof(EntitiesSelectorSingleQuery);
+            }
+            //see UniqueKeyTypeDiscriminator
+            else if (parser.TryFindMappingEntry(
+                    scalar => scalar.Value == nameof(EntitiesSelectorSingleQuery.query),
+                    out Scalar? _,
+                    out ParsingEvent? _
+                )
+            )  
+            {
+                //expanded version of single query selector
                 suggestedType = typeof(EntitiesSelectorSingleQuery);
             }
             else

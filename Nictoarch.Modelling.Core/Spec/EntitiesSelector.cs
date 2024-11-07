@@ -9,6 +9,7 @@ using Jsonata.Net.Native;
 using Nictoarch.Modelling.Core.Elements;
 using Nictoarch.Modelling.Core.Jsonata;
 using System.Collections;
+using Nictoarch.Modelling.Core.Yaml;
 
 namespace Nictoarch.Modelling.Core.Spec
 {
@@ -19,7 +20,10 @@ namespace Nictoarch.Modelling.Core.Spec
         //needed to parse scalars
         public static EntitiesSelectorBase Parse(string v)
         {
-            return new EntitiesSelectorSingleQuery(new JsonataQuery(v));
+            return new EntitiesSelectorSingleQuery(
+                new JsonataQueryYamlWrapper() {
+                    query = new JsonataQuery(v)
+                });
         }
     }
 
@@ -35,16 +39,26 @@ namespace Nictoarch.Modelling.Core.Spec
                 .ToList();
         }
 
-        private readonly JsonataQuery m_query;
+        //using wrapper instead of a query as a workaround for using !inpace and other tags because those only return string, https://github.com/aaubry/YamlDotNet/issues/368
+        [Required] public JsonataQueryYamlWrapper query { get; set; } = default!;
+        public JsonataQueryYamlWrapper? post_query { get; set; }
 
-        internal EntitiesSelectorSingleQuery(JsonataQuery query)
+        internal EntitiesSelectorSingleQuery(JsonataQueryYamlWrapper query)
         {
-            this.m_query = query;
+            this.query = query;
+        }
+
+        public EntitiesSelectorSingleQuery()
+        {
         }
 
         public override List<Entity> GetEntities(JToken extractedData)
         {
-            JToken queryResult = this.m_query.Eval(extractedData, "entities");
+            JToken queryResult = this.query.query.Eval(extractedData, "entities");
+            if (this.post_query != null)
+            {
+                queryResult = this.post_query.query.Eval(queryResult, "entities:post_query");
+            }
             List<Entity> result = new List<Entity>();
             switch (queryResult.Type)
             {
@@ -60,7 +74,7 @@ namespace Nictoarch.Modelling.Core.Spec
                 }
                 break;
             default:
-                throw new JsonataEvalException("Entity query should result in a single object or object array, but it returned " + queryResult.Type, this.m_query, extractedData);
+                throw new JsonataEvalException("Entity query should result in a single object or object array, but it returned " + queryResult.Type, this.post_query?.query ?? this.query.query, extractedData);
             }
             return result;
         }
