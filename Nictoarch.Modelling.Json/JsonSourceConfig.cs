@@ -65,17 +65,14 @@ namespace Nictoarch.Modelling.Json
 
             internal abstract AuthenticationHeaderValue? CreateHeader();
 
-            protected Auth(string type)
-            {
-                this.type = type ?? throw new ArgumentNullException(nameof(type));
-            }
-
             //used for short form "auth: none"
             public static Auth Parse(string v)
             {
                 if (v == NoneAuth.TYPE)
                 {
-                    return new NoneAuth();
+                    return new NoneAuth() {
+                        type = NoneAuth.TYPE,
+                    };
                 }
                 else
                 {
@@ -88,11 +85,6 @@ namespace Nictoarch.Modelling.Json
         {
             public const string TYPE = "none";
             
-            public NoneAuth()
-                : base(TYPE)
-            {
-            }
-
             internal override AuthenticationHeaderValue? CreateHeader() 
             {
                 return null; 
@@ -105,11 +97,6 @@ namespace Nictoarch.Modelling.Json
             
             [Required] public string user { get; set; } = default!;
             [Required] public string pass { get; set; } = default!;
-
-            public BasicAuth()
-                : base(TYPE)
-            { 
-            }
 
             internal override AuthenticationHeaderValue? CreateHeader()
             {
