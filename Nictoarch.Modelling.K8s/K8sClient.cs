@@ -248,7 +248,16 @@ namespace Nictoarch.Modelling.K8s
 
                 foreach (string group in groups)
                 {
-                    JToken queryResult = await this.SendRequest("apis/" + group, HttpMethod.Get, null, null, cancellationToken);
+                    JToken queryResult;
+                    try
+                    {
+                        queryResult = await this.SendRequest("apis/" + group, HttpMethod.Get, null, null, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        this.m_logger.Error(ex, $"Failed to get apis from '{group}' group: {ex.Message}");
+                        continue;
+                    }
 
                     JObject bindings = new JObject();
                     bindings.Set("group", new JValue(group));

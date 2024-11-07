@@ -53,7 +53,7 @@ namespace Nictoarch.Modelling.Core.Elements
                 {
                     if (!entityKeys.Add(entity))
                     {
-                        throw new Exception($"Found entites with same identity key ('{entity.GetKeyString()}')");
+                        throw new Exception($"Found entities with same identity key ('{entity.GetKeyString()}')");
                     }
                 }
 

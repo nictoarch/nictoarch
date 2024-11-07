@@ -285,25 +285,32 @@ Got {diff.entities_not_in_check_count} entitites not in CHECK model,
         {
             s_logger.Info("Pushing model to " + pushUrl);
             string modelJson = model.ToJson().ToFlatString(new SerializationSettings() { SerializeNullProperties = false });
-            using (HttpContent content = new StringContent(modelJson, new MediaTypeHeaderValue("application/json")))
-            using (HttpClient httpClient = new HttpClient())
+            try
             {
-                HttpResponseMessage response = await httpClient.PostAsync(pushUrl, content);
-                if (!response.IsSuccessStatusCode)
+                using (HttpContent content = new StringContent(modelJson, new MediaTypeHeaderValue("application/json")))
+                using (HttpClient httpClient = new HttpClient())
                 {
-                    string responseMsg;
-                    try
+                    HttpResponseMessage response = await httpClient.PostAsync(pushUrl, content);
+                    if (!response.IsSuccessStatusCode)
                     {
-                        responseMsg = await response.Content.ReadAsStringAsync();
+                        string responseMsg;
+                        try
+                        {
+                            responseMsg = await response.Content.ReadAsStringAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            responseMsg = $"(Failed to read response message: {ex.Message})";
+                        }
+                        throw new Exception($"Got unexpected response code {(int)response.StatusCode} {response.StatusCode}: '{responseMsg}'");
                     }
-                    catch (Exception ex)
-                    {
-                        responseMsg = $"(Failed to read response message: {ex.Message})";
-                    }
-                    throw new Exception(responseMsg);
+
+                    s_logger.Info("done");
                 }
-                
-                s_logger.Info("done");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to push model: {ex.Message}", ex);
             }
         }
 

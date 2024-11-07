@@ -73,7 +73,7 @@ namespace Nictoarch.Modelling.Core.Spec
             {
                 if (token.Type != JTokenType.Object)
                 {
-                    throw new Exception($"Attemptiong to convert a JSON {token.Type} to Entity. Should be a JSON Object");
+                    throw new Exception($"Attempting to convert a JSON {token.Type} to Entity. Should be a JSON Object");
                 }
 
                 JObject obj = (JObject)token;
