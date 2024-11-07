@@ -50,11 +50,11 @@ namespace Nictoarch.Modelling.Core.Spec
 
                 //see https://github.com/aaubry/YamlDotNet/wiki/Serialization.Deserializer#withnodedeserializer
                 .WithNodeDeserializer(
-                    nodeDeserializerFactory: innerDeserialzier => new AutoPropertyDeserializer(innerDeserialzier, modelSpecObjectFactory),
+                    nodeDeserializerFactory: innerDeserialzier => new CustomObjectNodeDeserializer(innerDeserialzier, modelSpecObjectFactory),
                     where: syntax => syntax.InsteadOf<ObjectNodeDeserializer>()
                 )
                 .WithNodeDeserializer(
-                    nodeDeserializerFactory: innerDeserialzier => new MaybeSimpleValueScalarNodeDeserializer(innerDeserialzier, modelSpecObjectFactory),
+                    nodeDeserializerFactory: innerDeserialzier => new CustomScalarNodeDeserializer(innerDeserialzier, modelSpecObjectFactory),
                     where: syntax => syntax.InsteadOf<ScalarNodeDeserializer>()
                 )
 

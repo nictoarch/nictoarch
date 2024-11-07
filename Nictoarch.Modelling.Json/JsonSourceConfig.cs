@@ -42,21 +42,45 @@ namespace Nictoarch.Modelling.Json
             }
         }
 
-        public sealed class FileSource: IMaybeYamlSimpleValue
+        public sealed class FileSource
         {
             public BasePathAutoProperty base_path { get; set; } = default!; //automatically provided by the ModelSpecObjectFactory
-            [Required, YamlSimpleValue] public string path { get; set; } = default!;
+            [Required] public string path { get; set; } = default!;
+
+            //used for short form 'file: aaa.json'
+            public static FileSource Parse(string v)
+            {
+                return new FileSource() {
+                    path = v
+                };
+            }
         }
 
-        public sealed class HttpSource: IMaybeYamlSimpleValue
+        public sealed class HttpSource
         {
             public Auth? auth { get; set; }
-            [Required, YamlSimpleValue] public string url { get; set; } = default!;
+            [Required] public string url { get; set; } = default!;
+
+            //used for short form 'http: http://site.com'
+            public static HttpSource Parse(string v)
+            {
+                return new HttpSource() {
+                    url = v
+                };
+            }
         }
 
-        public sealed class InplaceSource: IMaybeYamlSimpleValue
+        public sealed class InplaceSource
         {
-            [Required, YamlSimpleValue] public string value { get; set; } = default!;
+            [Required] public string value { get; set; } = default!;
+
+            //used for short form 'inplace: json'
+            public static InplaceSource Parse(string v)
+            {
+                return new InplaceSource() {
+                    value = v
+                };
+            }
         }
 
         public abstract class Auth
