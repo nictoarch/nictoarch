@@ -1,0 +1,9 @@
+﻿name: Test model
+data:
+  - source:
+      type: json
+      file: ../../_src/sample.json
+    elements:
+      - extract: 
+          transform: none
+        entities: $

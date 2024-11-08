@@ -16,27 +16,20 @@ namespace Nictoarch.Modelling.Core.Yaml
     // see https://github.com/aaubry/YamlDotNet/wiki/Serialization.Deserializer#withnodedeserializer
     internal abstract class CustomNodeDeserializer : INodeDeserializer
     {
-        private readonly INodeDeserializer m_nodeDeserializer;
-        private readonly ModelSpecObjectFactory m_objectFactory;
+        protected readonly INodeDeserializer m_nodeDeserializer;
+        protected readonly ModelSpecObjectFactory m_objectFactory;
 
-        public CustomNodeDeserializer(INodeDeserializer internalDeserialzier, ModelSpecObjectFactory objectFactory)
+        protected CustomNodeDeserializer(INodeDeserializer internalDeserialzier, ModelSpecObjectFactory objectFactory)
         {
             this.m_nodeDeserializer = internalDeserialzier;
             this.m_objectFactory = objectFactory;
         }
 
-        public virtual bool Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value, ObjectDeserializer rootDeserializer)
+        protected void PostProcessDeserializedObject(object? value, ParsingEvent? currentEvent)
         {
-            YamlDotNet.Core.Events.ParsingEvent? currentEvent = parser.Current;
-
-            if (!this.m_nodeDeserializer.Deserialize(parser, expectedType, nestedObjectDeserializer, out value, rootDeserializer))
-            {
-                return false;
-            }
-
             if (value == null)
             {
-                return true;
+                return;
             }
 
             foreach (PropertyInfo prop in value.GetType().GetProperties().Where(p => p.CanWrite && p.PropertyType == typeof(BasePathAutoProperty)))
@@ -68,36 +61,8 @@ namespace Nictoarch.Modelling.Core.Yaml
             {
                 deserializable.OnDeserialized(currentEvent!);
             }
-
-            return true;
         }
 
-    }
-
-    internal sealed class CustomObjectNodeDeserializer : CustomNodeDeserializer
-    {
-        public CustomObjectNodeDeserializer(INodeDeserializer internalDeserialzier, ModelSpecObjectFactory objectFactory) 
-            : base(internalDeserialzier, objectFactory)
-        {
-        }
-    }
-
-    internal sealed class CustomScalarNodeDeserializer : CustomNodeDeserializer
-    {
-        public CustomScalarNodeDeserializer(INodeDeserializer internalDeserialzier, ModelSpecObjectFactory objectFactory)
-            : base(internalDeserialzier, objectFactory)
-        {
-        }
-
-        public override bool Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value, ObjectDeserializer rootDeserializer)
-        {
-            if (parser.Current is not YamlDotNet.Core.Events.Scalar)
-            {
-                value = null;
-                return false;
-            }
-
-            return base.Deserialize(parser, expectedType, nestedObjectDeserializer, out value, rootDeserializer);
-        }
+        public abstract bool Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value, ObjectDeserializer rootDeserializer);
     }
 }

@@ -13,6 +13,7 @@ using Nictoarch.Modelling.Core.Yaml;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NodeDeserializers;
 using YamlDotNet.Serialization.BufferedDeserialization.TypeDiscriminators;
+using YamlDotNet.Core.Events;
 
 namespace Nictoarch.Modelling.Core.Spec
 {
@@ -54,23 +55,15 @@ namespace Nictoarch.Modelling.Core.Spec
                     where: syntax => syntax.InsteadOf<ObjectNodeDeserializer>()
                 )
                 .WithNodeDeserializer(
-                    nodeDeserializerFactory: innerDeserialzier => new CustomScalarNodeDeserializer(innerDeserialzier, modelSpecObjectFactory),
+                    nodeDeserializerFactory: innerDeserialzier => new CustomScalarNodeDeserializer(innerDeserialzier, modelSpecObjectFactory, basePath),
                     where: syntax => syntax.InsteadOf<ScalarNodeDeserializer>()
                 )
+
+                .WithNodeTypeResolver(new CustomScalarNodeDeserializer.TagTypeResolver(), syntax => syntax.OnTop())
 
                 .WithTypeConverter(new JsonataQueryYamlConverter())
                 //.WithTypeConverter(new MaybeYamlSimpleValueConverter(modelSpecObjectFactory))
 
-                .WithTagMapping(YamlnplaceNodeDeserializer.TAG, typeof(object)) // tag needs to be registered so that validation passes
-                .WithNodeDeserializer(
-                    new YamlnplaceNodeDeserializer(basePath),
-                    where: syntax => syntax.OnTop()
-                )
-                .WithTagMapping(YamEnvNodeDeserializer.TAG, typeof(string))     // tag needs to be registered so that validation passes
-                .WithNodeDeserializer(
-                    new YamEnvNodeDeserializer(),
-                    where: syntax => syntax.OnTop()
-                )
 
                 //see https://github.com/aaubry/YamlDotNet/wiki/Deserialization---Type-Discriminators#determining-type-based-on-the-value-of-a-key
                 .WithTypeDiscriminatingNodeDeserializer(options => {

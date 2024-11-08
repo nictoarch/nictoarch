@@ -57,6 +57,11 @@ namespace Nictoarch.Modelling.Json
             }
             else if (sourceConfig.file != null)
             {
+                if (sourceConfig.file.base_path?.path == null)
+                {
+                    throw new InvalidOperationException($"Should not happen! {nameof(BasePathAutoProperty)} did not initialize {nameof(JsonSourceConfig.FileSource)}.{nameof(JsonSourceConfig.FileSource.base_path)}");
+                }
+
                 string path = Path.Combine(sourceConfig.file.base_path.path, sourceConfig.file.path);
                 using (Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read))
                 {
