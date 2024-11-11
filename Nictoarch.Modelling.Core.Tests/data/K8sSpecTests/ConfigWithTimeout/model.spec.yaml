@@ -1,0 +1,7 @@
+﻿name: Test model
+data:
+  - source:
+      type: k8s
+      config: cluster
+      connect_timeout_seconds: 2.5
+    elements: []

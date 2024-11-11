@@ -1,0 +1,8 @@
+﻿name: Test model
+data:
+  - source:
+      type: k8s
+      config:
+        type: file
+        file: some/file.conf
+    elements: []

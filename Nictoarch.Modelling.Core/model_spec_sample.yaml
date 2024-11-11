@@ -25,13 +25,17 @@ data:
           ]
   - source: #source type is provider-specific
       type: k8s
+      config: cluster   #in case execution in cluster
       #####  may specify config file:
-      # config_file: "c:/Users/user/.kube/config.abc"
-      #      if unspecified, will use ~/.kube/config
+      # config:
+      #   type: file
+      #   file: "c:/Users/user/.kube/config.abc"
       #
-      #####  in case of execution in cluster, it's possible to instead specify
-      # use_cluster_config: true
+      ##### or (to use default ~/.kube/config)
+      # config:
+      #   type: file
       #
+
       ##### also possible to specify timeout
       # connect_timeout_seconds: 1.5
     elements:

@@ -20,10 +20,19 @@
   <ItemGroup>
     <ProjectReference Include="..\Nictoarch.Modelling.Core\Nictoarch.Modelling.Core.csproj" />
     <ProjectReference Include="..\Nictoarch.Modelling.Json\Nictoarch.Modelling.Json.csproj" />
+    <ProjectReference Include="..\Nictoarch.Modelling.K8s\Nictoarch.Modelling.K8s.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="data\K8sSpecTests\ClusterConfigInplace\" />
+    <Folder Include="data\K8sSpecTests\ClusterConfig\" />
+    <Folder Include="data\K8sSpecTests\FileConfigDefaultInplace\" />
+    <Folder Include="data\K8sSpecTests\FileConfigExplicit\" />
+    <Folder Include="data\K8sSpecTests\FileConfigDefault\" />
   </ItemGroup>
 
 </Project>

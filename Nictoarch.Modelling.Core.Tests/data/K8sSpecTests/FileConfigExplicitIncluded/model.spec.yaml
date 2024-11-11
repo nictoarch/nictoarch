@@ -1,0 +1,6 @@
+﻿name: Test model
+data:
+  - source:
+      type: k8s
+      config: !inplace values.yaml
+    elements: []
