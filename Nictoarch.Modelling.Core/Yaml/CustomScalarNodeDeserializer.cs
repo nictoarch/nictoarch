@@ -11,6 +11,8 @@ using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 using YamlDotNet;
 using System.Reflection;
+using YamlDotNet.RepresentationModel;
+using gfs.YamlDotNet.YamlPath;
 
 namespace Nictoarch.Modelling.Core.Yaml
 {
@@ -22,8 +24,8 @@ namespace Nictoarch.Modelling.Core.Yaml
         private const string PARSE_FACTORY_NAME = "Parse";
 
         private readonly string m_basePath;
-        private readonly Dictionary<string, string> m_fileCache = new Dictionary<string, string>();
-        private readonly Dictionary<string, JToken> m_jsonCache = new Dictionary<string, JToken>();
+        private readonly DeserializerBuilder m_deserializerBuilder;
+        private readonly Dictionary<string, YamlNode> m_yamlCache = new Dictionary<string, YamlNode>();
 
         internal sealed class TagTypeResolver : INodeTypeResolver
         {
@@ -41,10 +43,11 @@ namespace Nictoarch.Modelling.Core.Yaml
             }
         }
 
-        public CustomScalarNodeDeserializer(INodeDeserializer internalDeserialzier, ModelSpecObjectFactory objectFactory, string basePath) 
+        public CustomScalarNodeDeserializer(INodeDeserializer internalDeserialzier, ModelSpecObjectFactory objectFactory, string basePath, DeserializerBuilder deserializerBuilder) 
             : base(internalDeserialzier, objectFactory)
         {
             this.m_basePath = basePath;
+            this.m_deserializerBuilder = deserializerBuilder;
         }
 
         public override bool Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value, ObjectDeserializer rootDeserializer)
@@ -126,105 +129,80 @@ namespace Nictoarch.Modelling.Core.Yaml
 
         private object? GetInplaceValue(string filePath, Type expectedType, ParsingEvent parsingEvent)
         {
-            JsonataQuery? query;
-            int separatorIndex = filePath.IndexOf('#');
-            if (separatorIndex >= 0)
+            try
             {
-                string queryPath = filePath.Substring(separatorIndex + 1);
-                filePath = filePath.Substring(0, separatorIndex);
-                try
-                {
-                    query = new JsonataQuery(queryPath);
-                }
-                catch (Exception ex)
-                {
-                    throw new YamlException(parsingEvent.Start, parsingEvent.End, $"Failed to parse query part of {TAG_INPLACE} ({queryPath}): {ex.Message}", ex);
-                }
+                return this.GetInplaceValueInternal(filePath, expectedType);
             }
-            else
+            catch (Exception ex)
             {
-                query = null;
+                throw new YamlException(parsingEvent.Start, parsingEvent.End, $"Failed to process {TAG_INPLACE} ({filePath}): {ex.Message}", ex);
+            }
+        }
+
+        private object? GetInplaceValueInternal(string filePath, Type expectedType)
+        {
+            string? queryPath;
+            {
+                int separatorIndex = filePath.IndexOf('#');
+                if (separatorIndex >= 0)
+                {
+                    queryPath = filePath.Substring(separatorIndex + 1);
+                    filePath = filePath.Substring(0, separatorIndex);
+                }
+                else
+                {
+                    queryPath = null;
+                }
             }
 
             if (String.IsNullOrWhiteSpace(filePath))
             {
-                throw new YamlException(parsingEvent.Start, parsingEvent.End, $"{TAG_INPLACE} value should be in format '<filename>[#path]', provided: '{filePath}'");
+                throw new Exception($"Value should be in format '<filename>[#path]', provided: '{filePath}'");
             }
             filePath = Path.Combine(this.m_basePath, filePath);
 
-            if (!this.m_fileCache.TryGetValue(filePath, out string? fileContent))
+            if (!this.m_yamlCache.TryGetValue(filePath, out YamlNode? yamlNode))
             {
-                try
+                using (StreamReader reader = new StreamReader(filePath))
                 {
-                    fileContent = File.ReadAllText(filePath);
-                    this.m_fileCache.Add(filePath, fileContent);
-                }
-                catch (Exception ex)
-                {
-                    throw new YamlException(parsingEvent.Start, parsingEvent.End, $"Failed to read content of {TAG_INPLACE} file {filePath}: {ex.Message}", ex);
-                }
-            }
-
-            if (query == null)
-            {
-                //if no query specified, return whole file content as string.
-                return fileContent.Trim();
-            }
-
-            if (!this.m_jsonCache.TryGetValue(filePath, out JToken? json))
-            {
-                //see https://github.com/aaubry/YamlDotNet/blob/master/YamlDotNet.Samples/ConvertYamlToJson.cs
-                object? yamlObject;
-                try
-                {
-                    IDeserializer deserializer = new DeserializerBuilder().Build();
-                    using (StringReader reader = new StringReader(fileContent))
+                    YamlStream stream = new YamlStream();
+                    try
                     {
-                        yamlObject = deserializer.Deserialize(reader);
+                        stream.Load(reader);
                     }
-                }
-                catch (Exception ex)
-                {
-                    throw new YamlException(parsingEvent.Start, parsingEvent.End, $"Failed to parse yaml content of {TAG_INPLACE} file {filePath}: {ex.ToString()}", ex);
-                }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"Failed to parse YAML file '{filePath}': {ex.Message}", ex);
+                    }
 
-                ISerializer serializer = new SerializerBuilder()
-                        .JsonCompatible()
-                        .Build();
-
-                string jsonStr = serializer.Serialize(yamlObject);
-
-                try
-                {
-                    json = JToken.Parse(jsonStr);
-                    this.m_jsonCache.Add(filePath, json);
-                }
-                catch (Exception ex)
-                {
-                    throw new YamlException(parsingEvent.Start, parsingEvent.End, $"Failed to parse json-converted yaml content of {TAG_INPLACE} file {filePath}: {ex.Message}", ex);
+                    yamlNode = stream.Documents[0].RootNode;
+                    this.m_yamlCache.Add(filePath, yamlNode);
                 }
             }
+
+            
+            if (queryPath != null)
+            {
+                List<YamlNode> nodes = yamlNode.Query(queryPath).ToList();
+                if (nodes.Count != 1)
+                {
+                    throw new Exception($"Yaml path expression '{queryPath}' resulted in {nodes.Count} nodes, while it should return just a single one");
+                }
+                yamlNode = nodes[0];
+            }
+
+            IParser parser = yamlNode.ConvertToEventStream().ConvertToParser();
+
+            IDeserializer deserializer = this.m_deserializerBuilder.Build(); //TODO: use filePath as a new basePath here
 
             try
             {
-                JToken queryResult = query.Eval(json);
-                switch (queryResult.Type)
-                {
-                case JTokenType.Null:
-                    return null;
-                case JTokenType.String:
-                    return (string)queryResult;
-                case JTokenType.Integer:
-                case JTokenType.Boolean:
-                case JTokenType.Float:
-                    return (string)queryResult;
-                default:
-                    throw new Exception($"Query returned {queryResult.Type} while expected a value");
-                }
+                object? value = deserializer.Deserialize(parser, expectedType);
+                return value;
             }
             catch (Exception ex)
             {
-                throw new YamlException(parsingEvent.Start, parsingEvent.End, $"Failed to execute {TAG_INPLACE} query '{query}' on file {filePath}: {ex.Message}", ex);
+                throw new Exception($"Failed to deserialize content file {filePath} into {expectedType.Name}: {ex.Message}", ex);
             }
         }
     }

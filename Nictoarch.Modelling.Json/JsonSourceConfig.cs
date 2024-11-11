@@ -100,7 +100,7 @@ namespace Nictoarch.Modelling.Json
                 }
                 else
                 {
-                    throw new ArgumentException("Unexpected value " + v);
+                    throw new ArgumentException($"Unexpected value wile parsing {nameof(HttpSource.auth)} field: '{v}'");
                 }
             }
         }

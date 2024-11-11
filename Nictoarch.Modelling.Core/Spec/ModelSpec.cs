@@ -46,7 +46,9 @@ namespace Nictoarch.Modelling.Core.Spec
 
             ModelSpecObjectFactory modelSpecObjectFactory = new ModelSpecObjectFactory(registry, basePath);
 
-            DeserializerBuilder builder = new DeserializerBuilder()
+            DeserializerBuilder builder = new DeserializerBuilder();
+
+                builder
                 .WithObjectFactory(modelSpecObjectFactory)
 
                 //see https://github.com/aaubry/YamlDotNet/wiki/Serialization.Deserializer#withnodedeserializer
@@ -55,7 +57,7 @@ namespace Nictoarch.Modelling.Core.Spec
                     where: syntax => syntax.InsteadOf<ObjectNodeDeserializer>()
                 )
                 .WithNodeDeserializer(
-                    nodeDeserializerFactory: innerDeserialzier => new CustomScalarNodeDeserializer(innerDeserialzier, modelSpecObjectFactory, basePath),
+                    nodeDeserializerFactory: innerDeserialzier => new CustomScalarNodeDeserializer(innerDeserialzier, modelSpecObjectFactory, basePath, builder),
                     where: syntax => syntax.InsteadOf<ScalarNodeDeserializer>()
                 )
 

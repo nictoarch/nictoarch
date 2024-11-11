@@ -1,0 +1,14 @@
+﻿name: Test model
+data:
+  - source:
+      type: json
+      http:
+        url: https://raw.githubusercontent.com/nictoarch/nictoarch/refs/heads/main/Nictoarch.Modelling.Core.Tests/data/_src/sample.json
+        auth: 
+          type: basic
+          user: sample
+          pass: sample1
+    elements:
+      - extract: 
+          transform: none
+        entities: $
