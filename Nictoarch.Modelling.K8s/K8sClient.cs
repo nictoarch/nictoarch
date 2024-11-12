@@ -72,6 +72,7 @@ namespace Nictoarch.Modelling.K8s
             try
             {
                 this.m_baseUri = new Uri(config.Host);
+                this.m_logger.Trace("Using cluster base uri: " + this.m_baseUri);
             }
             catch (UriFormatException e)
             {
@@ -91,10 +92,12 @@ namespace Nictoarch.Modelling.K8s
 
             if (this.m_baseUri.Scheme == "https")
             {
+                this.m_logger.Trace("Using HTTPS");
                 if (config.SkipTlsVerify)
                 {
                     this.m_httpHandler.SslOptions.RemoteCertificateValidationCallback =
                         (sender, certificate, chain, sslPolicyErrors) => true;
+                    this.m_logger.Trace("Disabling SSL certificate check");
                 }
                 else
                 {
@@ -102,6 +105,7 @@ namespace Nictoarch.Modelling.K8s
                     {
                         this.m_httpHandler.SslOptions.RemoteCertificateValidationCallback =
                             (sender, certificate, chain, sslPolicyErrors) => CertificateValidationCallBack(config.SslCaCerts, certificate, chain, sslPolicyErrors);
+                        this.m_logger.Trace("Using CA certificate collection");
                     }
                 }
             }
@@ -113,6 +117,8 @@ namespace Nictoarch.Modelling.K8s
             {
                 this.m_httpHandler.SslOptions.ClientCertificates.Add(clientCert);
 
+                this.m_logger.Trace("Using client certificate " + clientCert.FriendlyName);
+
                 // TODO this is workaround for net7.0, remove it when the issue is fixed
                 // seems the client certificate is cached and cannot be updated
                 this.m_httpHandler.SslOptions.LocalCertificateSelectionCallback = (sender, targetHost, localCertificates, remoteCertificate, acceptableIssuers) => {
@@ -123,11 +129,15 @@ namespace Nictoarch.Modelling.K8s
             this.m_jsonSerializerOptions = config.JsonSerializerOptions;
             this.m_disableHttp2 = config.DisableHttp2;
 
+            this.m_logger.Trace("Disable HHTP2 = " + this.m_disableHttp2);
+
             config.FirstMessageHandlerSetup?.Invoke(this.m_httpHandler);
 
             this.m_httpClient = new HttpClient(this.m_httpHandler, false) {
                 Timeout = config.HttpClientTimeout,
             };
+
+            this.m_logger.Trace("HTTP Timeout is " + config.HttpClientTimeout);
         }
 
         internal async Task InitAsync(CancellationToken cancellationToken)
@@ -278,6 +288,8 @@ namespace Nictoarch.Modelling.K8s
 
         private Task<JToken> SendRequest(string relativeUri, HttpMethod method, IReadOnlyDictionary<string, IReadOnlyList<string>>? customHeaders, object? body, CancellationToken cancellationToken)
         {
+            //this.m_logger.Trace($"Sending {method.Method} request to {relativeUri}");
+
             using (HttpRequestMessage httpRequest = new HttpRequestMessage {
                 Method = method,
                 RequestUri = new Uri(this.m_baseUri, relativeUri),
@@ -304,7 +316,7 @@ namespace Nictoarch.Modelling.K8s
                     httpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json; charset=utf-8");
                 }
 
-                //this.m_logger.Trace($"{httpRequest.Method} {httpRequest.RequestUri} ({httpRequest.Version}, {httpRequest.Content?.Headers.ContentType}) ");
+                this.m_logger.Trace($"{httpRequest.Method} {httpRequest.RequestUri} ({httpRequest.Version}, {httpRequest.Content?.Headers.ContentType}) ");
 
                 return this.SendRequestRaw(httpRequest, cancellationToken);
             }
@@ -322,6 +334,7 @@ namespace Nictoarch.Modelling.K8s
             if (!string.IsNullOrWhiteSpace(this.m_tlsServerName))
             {
                 httpRequest.Headers.Host = this.m_tlsServerName;
+                this.m_logger.Trace($"Setting Hostname to {httpRequest.Headers.Host}");
             }
 
             // Send Request
@@ -352,19 +365,23 @@ namespace Nictoarch.Modelling.K8s
                     throw new HttpException($"Error executing request: {(int)httpResponse.StatusCode} {httpResponse.StatusCode}: {responseContent}", httpResponse.StatusCode);
                 }
 
-                //TODO: see https://github.com/mikhail-barg/jsonata.net.native/issues/12
-                //      see https://github.com/dotnet/runtime/issues/68983
-                /*
                 using (Stream stream = await httpResponse.Content.ReadAsStreamAsync(cancellationToken))
                 using (TextReader reader = new StreamReader(stream))
                 {
                     JToken result = JToken.Parse(reader);
                     return result;
                 }
-                */
+                /*
+                 * enabled code above
+                 * 
+                //TODO: see https://github.com/mikhail-barg/jsonata.net.native/issues/12
+                //      see https://github.com/dotnet/runtime/issues/68983
+                 * 
+                 * 
                 string responseStr = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
                 JToken result = JToken.Parse(responseStr);
                 return result;
+                */
             }
         }
 
