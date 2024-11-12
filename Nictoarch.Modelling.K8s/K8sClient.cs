@@ -72,11 +72,11 @@ namespace Nictoarch.Modelling.K8s
             try
             {
                 this.m_baseUri = new Uri(config.Host);
-                //this.m_logger.Trace("Using cluster base uri: " + this.m_baseUri);
+                this.m_logger.Trace("Using cluster base uri: " + this.m_baseUri);
             }
             catch (UriFormatException e)
             {
-                throw new KubeConfigException($"Bad host url: {config.Host}: {e.Message}", e);
+                throw new KubeConfigException("Bad host url", e);
             }
 
             this.m_tlsServerName = config.TlsServerName;
@@ -92,7 +92,7 @@ namespace Nictoarch.Modelling.K8s
 
             if (this.m_baseUri.Scheme == "https")
             {
-                //this.m_logger.Trace("Using HTTPS");
+                this.m_logger.Trace("Using HTTPS");
                 if (config.SkipTlsVerify)
                 {
                     this.m_httpHandler.SslOptions.RemoteCertificateValidationCallback =
@@ -105,7 +105,7 @@ namespace Nictoarch.Modelling.K8s
                     {
                         this.m_httpHandler.SslOptions.RemoteCertificateValidationCallback =
                             (sender, certificate, chain, sslPolicyErrors) => CertificateValidationCallBack(config.SslCaCerts, certificate, chain, sslPolicyErrors);
-                        //this.m_logger.Trace("Using CA certificate collection");
+                        this.m_logger.Trace("Using CA certificate collection");
                     }
                 }
             }
@@ -117,7 +117,7 @@ namespace Nictoarch.Modelling.K8s
             {
                 this.m_httpHandler.SslOptions.ClientCertificates.Add(clientCert);
 
-                //this.m_logger.Trace("Using client certificate " + clientCert.FriendlyName);
+                this.m_logger.Trace("Using client certificate " + clientCert.FriendlyName);
 
                 // TODO this is workaround for net7.0, remove it when the issue is fixed
                 // seems the client certificate is cached and cannot be updated
@@ -129,7 +129,7 @@ namespace Nictoarch.Modelling.K8s
             this.m_jsonSerializerOptions = config.JsonSerializerOptions;
             this.m_disableHttp2 = config.DisableHttp2;
 
-            //this.m_logger.Trace("Disable HHTP2 = " + this.m_disableHttp2);
+            this.m_logger.Trace("Disable HHTP2 = " + this.m_disableHttp2);
 
             config.FirstMessageHandlerSetup?.Invoke(this.m_httpHandler);
 
@@ -137,7 +137,7 @@ namespace Nictoarch.Modelling.K8s
                 Timeout = config.HttpClientTimeout,
             };
 
-            //this.m_logger.Trace("HTTP Timeout is " + config.HttpClientTimeout);
+            this.m_logger.Trace("HTTP Timeout is " + config.HttpClientTimeout);
         }
 
         internal async Task InitAsync(CancellationToken cancellationToken)
@@ -286,7 +286,7 @@ namespace Nictoarch.Modelling.K8s
             return result;
         }
 
-        private async Task<JToken> SendRequest(string relativeUri, HttpMethod method, IReadOnlyDictionary<string, IReadOnlyList<string>>? customHeaders, object? body, CancellationToken cancellationToken)
+        private Task<JToken> SendRequest(string relativeUri, HttpMethod method, IReadOnlyDictionary<string, IReadOnlyList<string>>? customHeaders, object? body, CancellationToken cancellationToken)
         {
             //this.m_logger.Trace($"Sending {method.Method} request to {relativeUri}");
 
@@ -318,8 +318,7 @@ namespace Nictoarch.Modelling.K8s
 
                 this.m_logger.Trace($"{httpRequest.Method} {httpRequest.RequestUri} ({httpRequest.Version}, {httpRequest.Content?.Headers.ContentType}) ");
 
-                JToken result = await this.SendRequestRaw(httpRequest, cancellationToken);
-                return result;
+                return this.SendRequestRaw(httpRequest, cancellationToken);
             }
         }
 
@@ -329,14 +328,13 @@ namespace Nictoarch.Modelling.K8s
             if (this.m_clientCredentials != null)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                //this.m_logger.Trace($"Setting client credentials {this.m_clientCredentials.GetType().Name}");
                 await this.m_clientCredentials.ProcessHttpRequestAsync(httpRequest, cancellationToken);
             }
 
             if (!string.IsNullOrWhiteSpace(this.m_tlsServerName))
             {
                 httpRequest.Headers.Host = this.m_tlsServerName;
-                //this.m_logger.Trace($"Setting Hostname to {httpRequest.Headers.Host}");
+                this.m_logger.Trace($"Setting Hostname to {httpRequest.Headers.Host}");
             }
 
             // Send Request
