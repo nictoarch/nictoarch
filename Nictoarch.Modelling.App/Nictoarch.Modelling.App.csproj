@@ -10,7 +10,7 @@
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<WarningsAsErrors />
 		<BuildNumber Condition="'$(BuildNumber)' == ''">0</BuildNumber>
-		<Version>1.2.0.$(BuildNumber)</Version>
+		<Version>1.3.0.$(BuildNumber)</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
