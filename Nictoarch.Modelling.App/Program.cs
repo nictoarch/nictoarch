@@ -5,6 +5,7 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -31,7 +32,7 @@ namespace Nictoarch.Modelling.App
 
         private static async Task<int> MainInternal(string[] args)
         {
-            RootCommand rootCommand = new RootCommand($"{nameof(Nictoarch)} modelling App");
+            RootCommand rootCommand = new RootCommand($"{nameof(Nictoarch)} modelling App v{Assembly.GetExecutingAssembly().GetName().Version}");
 
             {
                 Command exportModelCommand = new Command("extract-model", "Extract model accoring to spec-file");

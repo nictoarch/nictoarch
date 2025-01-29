@@ -53,10 +53,10 @@ namespace Nictoarch.Modelling.Db
                 return new Npgsql.NpgsqlConnection();
             case nameof(MySqlConnector.MySqlConnection):
                 return new MySqlConnector.MySqlConnection();
-            case nameof(System.Data.SqlClient.SqlConnection):
-                return new System.Data.SqlClient.SqlConnection();
+            case nameof(Microsoft.Data.SqlClient.SqlConnection):
+                return new Microsoft.Data.SqlClient.SqlConnection();
             default:
-                throw new Exception($"Unexpected '{nameof(sourceConfig.connection)}' value '{sourceConfig.connection}'. Only following connections are currently supported: {nameof(Npgsql.NpgsqlConnection)}, {nameof(MySqlConnector.MySqlConnection)}, {nameof(System.Data.SqlClient.SqlConnection)}");
+                throw new Exception($"Unexpected '{nameof(sourceConfig.connection)}' value '{sourceConfig.connection}'. Only following connections are currently supported: {nameof(Npgsql.NpgsqlConnection)}, {nameof(MySqlConnector.MySqlConnection)}, {nameof(Microsoft.Data.SqlClient.SqlConnection)}");
             }
         }
     }
