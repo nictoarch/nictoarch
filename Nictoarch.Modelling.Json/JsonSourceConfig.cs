@@ -61,6 +61,8 @@ namespace Nictoarch.Modelling.Json
             public Auth? auth { get; set; }
             [Required] public string url { get; set; } = default!;
 
+            public double? http_timeout_seconds { get; set; }
+
             //used for short form 'http: http://site.com'
             public static HttpSource Parse(string v)
             {

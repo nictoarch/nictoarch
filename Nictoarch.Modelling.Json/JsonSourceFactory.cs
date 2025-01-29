@@ -38,21 +38,32 @@ namespace Nictoarch.Modelling.Json
         {
             if (sourceConfig.http != null)
             {
-                using (HttpClient httpClient = new HttpClient())
-                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, sourceConfig.http.url))
+                try
                 {
-                    if (sourceConfig.http.auth != null)
+                    using (HttpClient httpClient = new HttpClient())
+                    using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, sourceConfig.http.url))
                     {
-                        request.Headers.Authorization = sourceConfig.http.auth.CreateHeader();
-                    }
-                    using (HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken))
-                    {
-                        response.EnsureSuccessStatusCode();
-                        using (Stream responseStream = await response.Content.ReadAsStreamAsync(cancellationToken))
+                        if (sourceConfig.http.auth != null)
                         {
-                            return await this.ReadStream(responseStream, cancellationToken);
+                            request.Headers.Authorization = sourceConfig.http.auth.CreateHeader();
+                        }
+                        if (sourceConfig.http.http_timeout_seconds != null)
+                        {
+                            httpClient.Timeout = TimeSpan.FromSeconds(sourceConfig.http.http_timeout_seconds.Value);
+                        }
+                        using (HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken))
+                        {
+                            response.EnsureSuccessStatusCode();
+                            using (Stream responseStream = await response.Content.ReadAsStreamAsync(cancellationToken))
+                            {
+                                return await this.ReadStream(responseStream, cancellationToken);
+                            }
                         }
                     }
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Error getting data from {sourceConfig.http.url}: {ex.Message}", ex);
                 }
             }
             else if (sourceConfig.file != null)
