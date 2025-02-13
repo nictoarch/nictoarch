@@ -286,7 +286,7 @@ namespace Nictoarch.Modelling.K8s
             return result;
         }
 
-        private Task<JToken> SendRequest(string relativeUri, HttpMethod method, IReadOnlyDictionary<string, IReadOnlyList<string>>? customHeaders, object? body, CancellationToken cancellationToken)
+        private async Task<JToken> SendRequest(string relativeUri, HttpMethod method, IReadOnlyDictionary<string, IReadOnlyList<string>>? customHeaders, object? body, CancellationToken cancellationToken)
         {
             //this.m_logger.Trace($"Sending {method.Method} request to {relativeUri}");
 
@@ -318,7 +318,7 @@ namespace Nictoarch.Modelling.K8s
 
                 this.m_logger.Trace($"{httpRequest.Method} {httpRequest.RequestUri} ({httpRequest.Version}, {httpRequest.Content?.Headers.ContentType}) ");
 
-                return this.SendRequestRaw(httpRequest, cancellationToken);
+                return await this.SendRequestRaw(httpRequest, cancellationToken);
             }
         }
 
