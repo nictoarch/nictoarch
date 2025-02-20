@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Nictoarch.Modelling.Core;
@@ -40,7 +42,12 @@ namespace Nictoarch.Modelling.Json
             {
                 try
                 {
-                    using (HttpClient httpClient = new HttpClient())
+                    using SocketsHttpHandler httpHandler = new SocketsHttpHandler();
+                    if (!sourceConfig.http.validate_server_certificate)
+                    {
+                        httpHandler.SslOptions.RemoteCertificateValidationCallback = (object sender, X509Certificate? certificate, X509Chain? chain, SslPolicyErrors sslPolicyErrors) => true;
+                    }
+                    using (HttpClient httpClient = new HttpClient(httpHandler, disposeHandler: true))
                     using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, sourceConfig.http.url))
                     {
                         if (sourceConfig.http.auth != null)

@@ -63,6 +63,8 @@ namespace Nictoarch.Modelling.Json
 
             public double? http_timeout_seconds { get; set; }
 
+            public bool validate_server_certificate { get; set; } = true;
+
             //used for short form 'http: http://site.com'
             public static HttpSource Parse(string v)
             {
