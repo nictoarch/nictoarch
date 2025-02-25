@@ -224,6 +224,13 @@ namespace Nictoarch.Modelling.K8s
             return resultList;
         }
 
+        //see https://stackoverflow.com/a/67994343
+        internal async Task<JToken> GetVersion(CancellationToken cancellationToken)
+        {
+            JToken result = await this.SendRequest("version", HttpMethod.Get, null, null, cancellationToken);
+            return result;
+        }
+
         private async Task<IReadOnlyList<ApiInfo>> RequestApiInfos(CancellationToken cancellationToken)
         {
             List<ApiInfo> result = new List<ApiInfo>();

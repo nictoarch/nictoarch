@@ -63,6 +63,20 @@ namespace Nictoarch.Modelling.K8s
                 result.Add(listApisCommand);
             }
 
+            {
+                Command getVersionCommand = new Command("cluster-version", "Get version of a cluster");
+                getVersionCommand.AddAlias("version");
+                Option<string?> configFileOption = new Option<string?>(new string[] { "--config", "-c" }, () => null, "Config file location");
+                getVersionCommand.Add(configFileOption);
+
+                getVersionCommand.SetHandler(
+                    this.GetVersionCommand,
+                    configFileOption
+                );
+
+                result.Add(getVersionCommand);
+            }
+
             return result;
         }
 
@@ -88,6 +102,21 @@ namespace Nictoarch.Modelling.K8s
 
                 
                 Console.WriteLine(resources.ToIndentedString());
+            }
+        }
+
+        private async Task GetVersionCommand(string? configFileName)
+        {
+            if (configFileName != null)
+            {
+                this.m_logger.Trace("Using config file at " + configFileName);
+            }
+
+            KubernetesClientConfiguration config = K8sClient.GetConfiguration(false, configFileName);
+            using (K8sClient client = new K8sClient(config))
+            {
+                JToken result = await client.GetVersion(CancellationToken.None);
+                Console.WriteLine(result.ToIndentedString());
             }
         }
 

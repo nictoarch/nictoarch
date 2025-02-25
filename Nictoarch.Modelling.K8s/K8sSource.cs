@@ -27,15 +27,24 @@ namespace Nictoarch.Modelling.K8s
 
         async Task<JToken> ISource<K8sExtractConfig>.Extract(K8sExtractConfig extractConfig, CancellationToken cancellationToken)
         {
-            JArray resources = await this.m_client.GetResources(
-                apiGroup: extractConfig.api_group,
-                resourceKind: extractConfig.resource_kind.ToLowerInvariant(),
-                @namespace: extractConfig.@namespace,
-                labelSelector: extractConfig.label_query,
-                cancellationToken: cancellationToken
-            );
+            switch (extractConfig.type)
+            {
+            case K8sExtractConfig.EDataType.version:
+                JToken result = await this.m_client.GetVersion(cancellationToken);
+                return result;
+            case K8sExtractConfig.EDataType.resource:
+                JArray resources = await this.m_client.GetResources(
+                    apiGroup: extractConfig.api_group,
+                    resourceKind: extractConfig.resource_kind!.ToLowerInvariant(),
+                    @namespace: extractConfig.@namespace,
+                    labelSelector: extractConfig.label_query,
+                    cancellationToken: cancellationToken
+                );
+                return resources;
+            default:
+                throw new Exception($"should not happen. Check validation in {nameof(K8sExtractConfig)}.{nameof(K8sExtractConfig.OnDeserialized)}()");
+            }
 
-            return resources;
         }
     }
 }

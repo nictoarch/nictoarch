@@ -1,0 +1,11 @@
+﻿name: Test model
+data:
+  - source:
+      type: k8s
+      config:
+        type: file
+    elements: 
+      - extract:
+          type: version
+        entities: 
+          query: "$"
